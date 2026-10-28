@@ -1,0 +1,71 @@
+/* Colores de TratoSeguro EC */
+:root {
+    --ts-azul-oscuro: #0a2f5a;
+    --ts-azul: #135892;
+    --ts-turquesa: #14b8b4;
+}
+
+body {
+    background-color: #f4f7fa;
+}
+
+/* Barra de navegación blanca con borde turquesa */
+.navbar-ts {
+    background-color: #fff;
+    border-bottom: 3px solid var(--ts-turquesa);
+}
+
+.navbar-ts .nav-link {
+    color: var(--ts-azul-oscuro);
+}
+
+.navbar-ts .nav-link:hover,
+.navbar-ts .nav-link.active {
+    color: var(--ts-azul);
+    font-weight: 600;
+}
+
+.logo-navbar {
+    height: 38px;
+}
+
+/* Botones principales en azul */
+.btn-primary {
+    background-color: var(--ts-azul);
+    border-color: var(--ts-azul);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--ts-azul-oscuro);
+    border-color: var(--ts-azul-oscuro);
+}
+
+.btn-outline-primary {
+    color: var(--ts-azul);
+    border-color: var(--ts-azul);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--ts-azul);
+    border-color: var(--ts-azul);
+}
+
+.titulo {
+    color: var(--ts-azul-oscuro);
+}
+
+.card {
+    border: 0;
+    border-radius: .75rem;
+}
+
+/* Login y registro */
+.auth-fondo {
+    background: linear-gradient(135deg, var(--ts-azul-oscuro) 0%, var(--ts-azul) 60%, var(--ts-turquesa) 100%);
+    min-height: 100vh;
+}
+
+.logo-auth {
+    max-width: 260px;
+}
