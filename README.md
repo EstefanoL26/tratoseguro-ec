@@ -46,6 +46,9 @@ de ejemplo. Para empezar de cero, borra la carpeta `data/`.
 Las tablas las crea JPA/Hibernate a partir de las entidades (`ddl-auto=update`): `usuario`, `provincia`, `ciudad`
 y `transaccion`. Relaciones: `PROVINCIA 1─N CIUDAD 1─N USUARIO` (`ciudad.id_provincia`, `usuario.id_ciudad`).
 
+Diagrama, claves foráneas y cómo se guarda cada dato: [`docs/BASE_DE_DATOS.md`](docs/BASE_DE_DATOS.md).
+Consultas listas para DBeaver: [`docs/consultas.sql`](docs/consultas.sql).
+
 Para ver la base del servidor con **DBeaver**: en Render → `tratoseguro-db` → **Connect → External**, copiar host,
 puerto, base, usuario y contraseña, y crear en DBeaver una conexión PostgreSQL con **SSL mode = require**.
 
