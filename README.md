@@ -12,7 +12,8 @@ Proyecto de la materia **ISWZ3101 – Ingeniería Web (UDLA)** · Grupo 10
 Estéfano Daniel López Pozo · Juan Alberto Choca Barrionuevo
 
 **Repositorio:** https://github.com/EstefanoL26/tratoseguro-ec
-**Aplicación desplegada:** _(pega aquí la URL de Render, por ejemplo https://tratoseguro-ec.onrender.com)_
+**Aplicación desplegada (Render):** https://tratoseguro-ec.onrender.com
+(plan gratuito: si estuvo inactiva, la primera carga tarda cerca de un minuto)
 
 ## Tecnologías
 
@@ -38,7 +39,7 @@ Para empezar de cero, borra la carpeta `data/`.
 
 | Usuario | Contraseña | Rol | Ciudad |
 |---|---|---|---|
-| `admin` | `admin123` (en el servidor: variable `ADMIN_PASSWORD`) | Administrador | Quito |
+| `admin` | `admin123` en local; en Render, la definida en `ADMIN_PASSWORD` | Administrador | Quito |
 | `carlos` | `clave123` | Vendedor (Carlos Mena) | Quito |
 | `anatorres` | `clave123` | Comprador (Ana Torres) | Guayaquil |
 | `paula` | `clave123` | Mediador (Paula Ríos) | Cuenca |
