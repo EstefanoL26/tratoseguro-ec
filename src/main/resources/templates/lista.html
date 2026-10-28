@@ -19,6 +19,10 @@
             <li class="nav-item"><a class="nav-link active" th:href="@{/transacciones}">Mis tratos</a></li>
             <li class="nav-item"><a class="nav-link" th:href="@{/transacciones/nueva}">Nuevo trato</a></li>
         </ul>
+        <!-- El logout es POST para que lleve el token CSRF (th:action lo agrega solo) -->
+        <form th:action="@{/logout}" method="post" class="d-flex">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Cerrar sesión</button>
+        </form>
     </div>
 </nav>
 
