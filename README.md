@@ -17,7 +17,7 @@ Estéfano Daniel López Pozo · Juan Alberto Choca Barrionuevo
 
 ## Tecnologías
 
-Java 17 · Spring Boot 4.1.1 · Spring MVC · Thymeleaf · Spring Data JPA · Spring Security · H2 · Bootstrap 5.3.3 · Maven Wrapper · Docker
+Java 17 · Spring Boot 4.1.1 · Spring MVC · Thymeleaf · Spring Data JPA · Spring Security · H2 (local) · PostgreSQL (servidor) · Bootstrap 5.3.3 · Maven Wrapper · Docker
 
 ## Cómo ejecutarlo en local
 
@@ -32,8 +32,22 @@ Requisito: **JDK 17 o superior** (Maven no hace falta, se usa el wrapper incluid
 
 Abrir http://localhost:8080
 
-La base de datos H2 se guarda en `./data/tratoseguro.mv.db` y se llena sola la primera vez con datos de ejemplo.
-Para empezar de cero, borra la carpeta `data/`.
+En local la base de datos es H2 y se guarda en `./data/tratoseguro.mv.db`; se llena sola la primera vez con datos
+de ejemplo. Para empezar de cero, borra la carpeta `data/`.
+
+## Base de datos
+
+| Entorno | Base | Configuración |
+|---|---|---|
+| Local | H2 en archivo (`./data/tratoseguro.mv.db`) | `application.properties` |
+| Servidor (Render) | **PostgreSQL** de Render (`tratoseguro-db`) | `application-prod.properties`, activado con `SPRING_PROFILES_ACTIVE=prod` |
+| Pruebas | H2 en memoria | `src/test/resources/application.properties` |
+
+Las tablas las crea JPA/Hibernate a partir de las entidades (`ddl-auto=update`): `usuario`, `provincia`, `ciudad`
+y `transaccion`. Relaciones: `PROVINCIA 1─N CIUDAD 1─N USUARIO` (`ciudad.id_provincia`, `usuario.id_ciudad`).
+
+Para ver la base del servidor con **DBeaver**: en Render → `tratoseguro-db` → **Connect → External**, copiar host,
+puerto, base, usuario y contraseña, y crear en DBeaver una conexión PostgreSQL con **SSL mode = require**.
 
 ### Usuarios de prueba
 
@@ -132,11 +146,12 @@ El proyecto incluye un `Dockerfile` (compila con el Maven Wrapper y ejecuta con 
 2. En https://render.com → **New → Blueprint** (o **Web Service**) → conectar el repositorio. Render detecta el
    `Dockerfile` y el `render.yaml`.
 3. En **Environment**, definir `ADMIN_PASSWORD` con una contraseña segura para el usuario `admin`.
-4. Render compila la imagen y publica la app en `https://<nombre>.onrender.com`. Spring Boot usa el puerto de
+4. Render crea la base PostgreSQL `tratoseguro-db`, le pasa a la app sus datos de conexión (`DB_HOST`, `DB_PORT`,
+   `DB_NAME`, `DB_USER`, `DB_PASSWORD`) y activa el perfil `prod`.
+5. Render compila la imagen y publica la app en `https://<nombre>.onrender.com`. Spring Boot usa el puerto de
    la variable `PORT` que entrega Render.
 
-> En el plan gratuito el disco no es persistente: si el servicio se reinicia, la base H2 vuelve a los datos de
-> ejemplo. Para producción se migrará a PostgreSQL (está en la hoja de ruta).
+> La base PostgreSQL gratuita de Render vence a los 30 días; después hay que crear otra o pasar a un plan pago.
 
 ## Seguridad
 
@@ -155,4 +170,4 @@ El proyecto incluye un `Dockerfile` (compila con el Maven Wrapper y ejecuta con 
 5. Disputas con evidencia y decisión del mediador, incluida la vía rápida.
 6. Contabilidad: retención, comisión (3 %), liberación y reembolso con la regla de cuadre.
 7. Historial de cambios de estado y notificaciones internas.
-8. `@Version`, más pruebas con MockMvc, Flyway y PostgreSQL.
+8. `@Version`, más pruebas con MockMvc y migraciones con Flyway.

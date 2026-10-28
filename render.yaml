@@ -9,3 +9,34 @@ services:
       # Contraseña del usuario admin que se crea la primera vez (se escribe en el panel de Render)
       - key: ADMIN_PASSWORD
         sync: false
+      # Activa application-prod.properties (PostgreSQL en lugar de H2)
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      # Datos de conexión que Render toma de la base de datos de abajo
+      - key: DB_HOST
+        fromDatabase:
+          name: tratoseguro-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: tratoseguro-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: tratoseguro-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: tratoseguro-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: tratoseguro-db
+          property: password
+
+# Base de datos PostgreSQL del servidor (plan gratuito)
+databases:
+  - name: tratoseguro-db
+    databaseName: tratoseguro
+    user: tratoseguro
+    plan: free
