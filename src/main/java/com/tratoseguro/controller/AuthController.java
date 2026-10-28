@@ -36,18 +36,26 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
-    public String registrar(@RequestParam String nombre, @RequestParam String username,
-                            @RequestParam String password, Model model, RedirectAttributes flash) {
-        if (nombre.isBlank() || username.isBlank() || password.isBlank()) {
+    public String registrar(@RequestParam String nombre, @RequestParam String username, @RequestParam String email,
+                            @RequestParam String cedula, @RequestParam String password,
+                            @RequestParam(defaultValue = "COMPRADOR") String rol,
+                            Model model, RedirectAttributes flash) {
+        if (nombre.isBlank() || username.isBlank() || email.isBlank() || cedula.isBlank() || password.isBlank()) {
             model.addAttribute("error", "Todos los campos son obligatorios.");
+            return "registro";
+        }
+        if (!email.contains("@")) {
+            model.addAttribute("error", "Escribe un correo válido.");
             return "registro";
         }
         if (password.length() < 6) {
             model.addAttribute("error", "La contraseña debe tener al menos 6 caracteres.");
             return "registro";
         }
-        if (!usuarioService.registrar(nombre.trim(), username.trim(), password)) {
-            model.addAttribute("error", "Ese usuario ya existe.");
+        // La cédula y el rol se validan en el servicio
+        String error = usuarioService.registrar(nombre.trim(), username.trim(), email.trim(), cedula.trim(), password, rol);
+        if (error != null) {
+            model.addAttribute("error", error);
             return "registro";
         }
         flash.addFlashAttribute("mensaje", "Cuenta creada. Ahora inicia sesión.");
