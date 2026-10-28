@@ -1,0 +1,11 @@
+# Despliegue en Render (https://render.com) con el Dockerfile del proyecto
+services:
+  - type: web
+    name: tratoseguro-ec
+    runtime: docker
+    plan: free
+    healthCheckPath: /login
+    envVars:
+      # Contraseña del usuario admin que se crea la primera vez (se escribe en el panel de Render)
+      - key: ADMIN_PASSWORD
+        sync: false
