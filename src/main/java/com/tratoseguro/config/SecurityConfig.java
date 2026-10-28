@@ -18,6 +18,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/registro", "/css/**", "/img/**").permitAll()
+                        // La administración solo la puede usar el rol ADMIN (si no, responde 403)
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

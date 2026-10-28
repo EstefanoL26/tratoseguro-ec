@@ -54,7 +54,7 @@ public class DatosIniciales implements CommandLineRunner {
         if (usuarioRepository.count() == 0) {
             crearUsuario("admin", claveAdmin, "Administrador", "admin@tratoseguro.ec", "1712345675", Rol.ADMIN, "Quito");
             crearUsuario("carlos", "clave123", "Carlos Mena", "carlos.mena@correo.ec", "1723456784", Rol.VENDEDOR, "Quito");
-            crearUsuario("ana", "clave123", "Ana Torres", "ana.torres@correo.ec", "0923456784", Rol.COMPRADOR, "Guayaquil");
+            crearUsuario("anatorres", "clave123", "Ana Torres", "ana.torres@correo.ec", "0923456784", Rol.COMPRADOR, "Guayaquil");
             crearUsuario("paula", "clave123", "Paula Ríos", "paula.rios@tratoseguro.ec", "0104567896", Rol.MEDIADOR, "Cuenca");
             crearUsuario("finanzas", "clave123", "Diego Salazar", "finanzas@tratoseguro.ec", "1807654320", Rol.FINANZAS, "Ambato");
         }

@@ -35,3 +35,4 @@ build/
 ### Base de datos local H2 ###
 data/
 .DS_Store
+.claude/

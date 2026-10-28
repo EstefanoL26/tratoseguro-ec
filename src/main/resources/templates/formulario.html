@@ -18,7 +18,10 @@
         <ul class="navbar-nav me-auto">
             <li class="nav-item"><a class="nav-link" th:href="@{/transacciones}">Mis tratos</a></li>
             <li class="nav-item"><a class="nav-link active" th:href="@{/transacciones/nueva}">Nuevo trato</a></li>
+            <!-- Solo el administrador ve este menú (la protección real está en SecurityConfig) -->
+            <li class="nav-item" th:if="${esAdmin}"><a class="nav-link" th:href="@{/admin/usuarios}">Administración</a></li>
         </ul>
+        <span class="navbar-text me-3" th:text="${usuarioActual}">usuario</span>
         <!-- El logout es POST para que lleve el token CSRF (th:action lo agrega solo) -->
         <form th:action="@{/logout}" method="post" class="d-flex">
             <button type="submit" class="btn btn-sm btn-outline-secondary">Cerrar sesión</button>
