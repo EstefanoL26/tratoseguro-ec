@@ -11,6 +11,7 @@ confirma que recibió el producto. Si hay un problema, un **mediador** decide si
 Proyecto de la materia **ISWZ3101 – Ingeniería Web (UDLA)** · Grupo 10
 Estéfano Daniel López Pozo · Juan Alberto Choca Barrionuevo
 
+**Repositorio:** https://github.com/EstefanoL26/tratoseguro-ec
 **Aplicación desplegada:** _(pega aquí la URL de Render, por ejemplo https://tratoseguro-ec.onrender.com)_
 
 ## Tecnologías
