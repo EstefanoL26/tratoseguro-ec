@@ -12,6 +12,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link th:href="@{/css/estilos.css}" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script th:src="@{/js/interacciones.js}" defer></script>
+    <!-- Sin JavaScript el toast se muestra fijo, sin animación -->
+    <noscript><style>.t-toast { opacity: 1; transform: none; filter: none; }</style></noscript>
 </head>
 <body>
 
@@ -41,7 +44,14 @@
 </nav>
 
 <main class="container py-4">
-    <div th:if="${mensaje}" class="alert alert-success" role="status" th:text="${mensaje}"></div>
+    <!-- Confirmación como toast: sube desde abajo y se cierra sola (ver interacciones.js) -->
+    <div th:if="${mensaje}" class="toast-zona" role="status" aria-live="polite">
+        <div class="t-toast toast-ts">
+            <i class="bi bi-check-circle-fill toast-icono" aria-hidden="true"></i>
+            <span th:text="${mensaje}">Guardado</span>
+            <button type="button" class="btn-close ms-auto" aria-label="Cerrar aviso" data-cerrar-toast></button>
+        </div>
+    </div>
     <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 
     <div class="encabezado-pagina">
