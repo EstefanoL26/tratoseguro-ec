@@ -1,15 +1,60 @@
-/* Colores de TratoSeguro EC */
+/* =========================================================
+   TratoSeguro EC - estilos propios sobre Bootstrap 5.3
+   ========================================================= */
+
+/* ---------- Colores y variables de la marca ---------- */
+
 :root {
     --ts-azul-oscuro: #0a2f5a;
     --ts-azul: #135892;
+    --ts-azul-presionado: #082545;
     --ts-turquesa: #14b8b4;
+    /* El turquesa claro no sirve para texto (2.5:1); esta variante sí (6.3:1) */
+    --ts-turquesa-texto: #0b6b68;
     --ts-fondo: #f4f7fa;
+    --ts-tinta: #16233a;
+    --ts-texto-secundario: #5b6675;
+    --ts-linea: #e3e8ee;
     /* Borde de los campos: contraste 3.6:1 sobre blanco (WCAG pide al menos 3:1) */
     --ts-borde-campo: #7d8794;
+
+    /* Sombra en capas: una cercana y una difusa, ambas transparentes */
+    --ts-sombra-tarjeta: 0 1px 2px rgba(10, 47, 90, .06), 0 4px 16px rgba(10, 47, 90, .06);
+
+    /* Bootstrap usa la marca en enlaces, badges, foco y bordes redondeados (un solo azul) */
+    --bs-primary: #135892;
+    --bs-primary-rgb: 19, 88, 146;
+    --bs-link-color: #135892;
+    --bs-link-color-rgb: 19, 88, 146;
+    --bs-link-hover-color: #0a2f5a;
+    --bs-link-hover-color-rgb: 10, 47, 90;
+    --bs-focus-ring-color: rgba(19, 88, 146, .35);
+    --bs-body-font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --bs-body-color: #16233a;
+    --bs-secondary-color: #5b6675;
+    --bs-border-radius: .5rem;
+    --bs-border-radius-sm: .375rem;
+    --bs-border-radius-lg: .75rem;
 }
 
 body {
     background-color: var(--ts-fondo);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+    text-wrap: balance;
+}
+
+/* Selección de texto y cursor con los colores de la marca */
+::selection {
+    background-color: rgba(20, 184, 180, .28);
+}
+
+input,
+textarea {
+    caret-color: var(--ts-azul);
 }
 
 /* ---------- Barra de navegación ---------- */
@@ -41,8 +86,13 @@ body {
     text-decoration-color: var(--ts-turquesa);
 }
 
+.navbar-ts .navbar-toggler:focus {
+    box-shadow: 0 0 0 .2rem var(--bs-focus-ring-color);
+}
+
 .logo-navbar {
     height: 38px;
+    width: auto;
 }
 
 /* Usuario conectado y botón de cerrar sesión */
@@ -50,6 +100,10 @@ body {
     display: flex;
     align-items: center;
     gap: .75rem;
+}
+
+.navbar-usuario .navbar-text {
+    color: var(--ts-texto-secundario);
 }
 
 /* En móvil el menú plegado se separa del logo y el usuario queda abajo */
@@ -60,7 +114,7 @@ body {
 
     .navbar-usuario {
         justify-content: space-between;
-        border-top: 1px solid #e3e8ee;
+        border-top: 1px solid var(--ts-linea);
         margin-top: .5rem;
         padding-top: .75rem;
     }
@@ -72,25 +126,33 @@ body {
 
 /* ---------- Botones ---------- */
 
+/* Se usan las variables de Bootstrap para cubrir todos los estados: normal, hover, presionado y foco */
 .btn-primary {
-    background-color: var(--ts-azul);
-    border-color: var(--ts-azul);
-}
-
-.btn-primary:hover,
-.btn-primary:focus {
-    background-color: var(--ts-azul-oscuro);
-    border-color: var(--ts-azul-oscuro);
+    --bs-btn-bg: var(--ts-azul);
+    --bs-btn-border-color: var(--ts-azul);
+    --bs-btn-hover-bg: var(--ts-azul-oscuro);
+    --bs-btn-hover-border-color: var(--ts-azul-oscuro);
+    --bs-btn-active-bg: var(--ts-azul-presionado);
+    --bs-btn-active-border-color: var(--ts-azul-presionado);
+    --bs-btn-disabled-bg: var(--ts-azul);
+    --bs-btn-disabled-border-color: var(--ts-azul);
+    --bs-btn-focus-shadow-rgb: 19, 88, 146;
+    font-weight: 600;
 }
 
 .btn-outline-primary {
-    color: var(--ts-azul);
-    border-color: var(--ts-azul);
+    --bs-btn-color: var(--ts-azul);
+    --bs-btn-border-color: var(--ts-azul);
+    --bs-btn-hover-bg: var(--ts-azul);
+    --bs-btn-hover-border-color: var(--ts-azul);
+    --bs-btn-active-bg: var(--ts-azul-oscuro);
+    --bs-btn-active-border-color: var(--ts-azul-oscuro);
+    --bs-btn-focus-shadow-rgb: 19, 88, 146;
 }
 
-.btn-outline-primary:hover {
-    background-color: var(--ts-azul);
-    border-color: var(--ts-azul);
+/* Íconos dentro de los botones: separados del texto y del mismo color */
+.btn .bi {
+    margin-right: .375rem;
 }
 
 /* Botones de las tablas: área de toque de al menos 40px (44px en móvil) */
@@ -107,15 +169,65 @@ body {
     border-color: var(--ts-borde-campo);
 }
 
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--ts-azul);
+    box-shadow: 0 0 0 .25rem rgba(19, 88, 146, .2);
+}
+
+.form-check-input:checked {
+    background-color: var(--ts-azul);
+    border-color: var(--ts-azul);
+}
+
+.form-check-input:focus {
+    border-color: var(--ts-azul);
+    box-shadow: 0 0 0 .25rem rgba(19, 88, 146, .2);
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+/* Grupos de campos dentro de un formulario largo */
+.grupo-campos {
+    border-top: 1px solid var(--ts-linea);
+    padding-top: 1.25rem;
+    margin-top: 1.25rem;
+}
+
+.grupo-campos:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.grupo-campos legend {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ts-azul-oscuro);
+    margin-bottom: .75rem;
+}
+
 /* ---------- Títulos y tarjetas ---------- */
 
+/* Mismo tamaño de título en todas las páginas */
 .titulo {
     color: var(--ts-azul-oscuro);
+    font-size: clamp(1.375rem, 1.2rem + .6vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -.015em;
+}
+
+.subtitulo {
+    color: var(--ts-texto-secundario);
+    font-size: .9375rem;
 }
 
 .card {
+    --bs-card-border-radius: .75rem;
     border: 0;
-    border-radius: .75rem;
+    box-shadow: var(--ts-sombra-tarjeta);
 }
 
 /* Encabezado de las listas: título y botón se apilan si no caben */
@@ -125,7 +237,75 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: .75rem 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ---------- Tablas ---------- */
+
+.table > thead th {
+    color: var(--ts-texto-secundario);
+    font-size: .875rem;
+    font-weight: 600;
+    background-color: #f7f9fb;
+    border-bottom-color: var(--ts-linea);
+}
+
+/* Montos y números: cifras del mismo ancho para que se alineen en columna */
+.monto,
+.numero {
+    font-variant-numeric: tabular-nums;
+}
+
+.monto {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ---------- Estados del trato ---------- */
+
+/* Cada estado tiene su color; el texto siempre acompaña al color (nunca es la única señal) */
+.estado {
+    display: inline-block;
+    padding: .25rem .625rem;
+    border-radius: 999px;
+    font-size: .8125rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.estado-creada      { background-color: #eef1f5; color: #3f4a59; }
+.estado-pagada      { background-color: #e6eff8; color: #135892; }
+.estado-enviada     { background-color: #e2f5f4; color: #0b6b68; }
+.estado-liberada    { background-color: #e5f4ea; color: #1b6b34; }
+.estado-en_disputa  { background-color: #fdf2df; color: #8a5300; }
+.estado-reembolsada { background-color: #f0ebfa; color: #5a3d99; }
+.estado-cancelada   { background-color: #fbe9ea; color: #a1262e; }
+
+/* Rol del usuario */
+.etiqueta-rol {
+    display: inline-block;
+    padding: .25rem .625rem;
+    border-radius: 999px;
+    background-color: #e6eff8;
+    color: var(--ts-azul-oscuro);
+    font-size: .8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Trato que ya no se puede editar */
+.texto-bloqueado {
+    color: var(--ts-texto-secundario);
+    font-size: .875rem;
+    white-space: nowrap;
+}
+
+/* Lista vacía */
+.lista-vacia {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--ts-texto-secundario);
 }
 
 /* ---------- Tablas que se vuelven tarjetas en móvil ---------- */
@@ -134,7 +314,7 @@ body {
     /* La tarjeta que envuelve la lista desaparece para no tener tarjetas dentro de tarjetas */
     .card-listado {
         background: transparent;
-        box-shadow: none !important;
+        box-shadow: none;
     }
 
     .card-listado > .card-body {
@@ -156,9 +336,9 @@ body {
     /* Cada fila es una tarjeta */
     .tabla-tarjetas tr {
         background-color: #fff;
-        border: 1px solid #e3e8ee;
         border-radius: .75rem;
-        padding: .75rem 1rem;
+        box-shadow: var(--ts-sombra-tarjeta);
+        padding: .875rem 1rem;
         margin-bottom: .75rem;
     }
 
@@ -170,12 +350,13 @@ body {
         gap: 1rem;
         padding: .25rem 0;
         border: 0;
+        box-shadow: none;
         text-align: right;
     }
 
     .tabla-tarjetas td[data-label]::before {
         content: attr(data-label);
-        color: #5b6675;
+        color: var(--ts-texto-secundario);
         font-size: .875rem;
         text-align: left;
     }
@@ -191,7 +372,7 @@ body {
         display: none;
     }
 
-    /* Botones a lo ancho, con 44px de alto */
+    /* Botones con 44px de alto */
     .tabla-tarjetas td.celda-acciones {
         justify-content: flex-end;
         padding-top: .75rem;
@@ -214,6 +395,11 @@ body {
     min-height: 100vh;
 }
 
+.auth-fondo .card {
+    box-shadow: 0 2px 4px rgba(4, 22, 44, .12), 0 16px 40px rgba(4, 22, 44, .22);
+}
+
 .logo-auth {
     max-width: 260px;
+    height: auto;
 }
