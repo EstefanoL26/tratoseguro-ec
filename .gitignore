@@ -36,3 +36,6 @@ build/
 data/
 .DS_Store
 .claude/
+
+### Configuración local de herramientas de diseño ###
+.impeccable/

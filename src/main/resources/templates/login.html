@@ -20,19 +20,19 @@
                         <p class="text-muted mt-2 mb-0">Pago protegido para tus compras</p>
                     </div>
 
-                    <div th:if="${param.error}" class="alert alert-danger py-2">Usuario o contraseña incorrectos.</div>
-                    <div th:if="${param.logout}" class="alert alert-info py-2">Cerraste sesión correctamente.</div>
-                    <div th:if="${mensaje}" class="alert alert-success py-2" th:text="${mensaje}"></div>
+                    <div th:if="${param.error}" class="alert alert-danger py-2" role="alert">Usuario o contraseña incorrectos.</div>
+                    <div th:if="${param.logout}" class="alert alert-info py-2" role="status">Cerraste sesión correctamente.</div>
+                    <div th:if="${mensaje}" class="alert alert-success py-2" role="status" th:text="${mensaje}"></div>
 
                     <!-- Spring Security procesa este POST. Los campos deben llamarse username y password -->
                     <form th:action="@{/login}" method="post">
                         <div class="mb-3">
                             <label for="username" class="form-label">Usuario</label>
-                            <input type="text" id="username" name="username" class="form-control" required autofocus>
+                            <input type="text" id="username" name="username" class="form-control" autocomplete="username" required autofocus>
                         </div>
                         <div class="mb-4">
                             <label for="password" class="form-label">Contraseña</label>
-                            <input type="password" id="password" name="password" class="form-control" required>
+                            <input type="password" id="password" name="password" class="form-control" autocomplete="current-password" required>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Ingresar</button>
                     </form>

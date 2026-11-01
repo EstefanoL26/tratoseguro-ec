@@ -3,33 +3,75 @@
     --ts-azul-oscuro: #0a2f5a;
     --ts-azul: #135892;
     --ts-turquesa: #14b8b4;
+    --ts-fondo: #f4f7fa;
+    /* Borde de los campos: contraste 3.6:1 sobre blanco (WCAG pide al menos 3:1) */
+    --ts-borde-campo: #7d8794;
 }
 
 body {
-    background-color: #f4f7fa;
+    background-color: var(--ts-fondo);
 }
 
-/* Barra de navegación blanca con borde turquesa */
+/* ---------- Barra de navegación ---------- */
+
+/* Barra blanca con borde turquesa */
 .navbar-ts {
     background-color: #fff;
     border-bottom: 3px solid var(--ts-turquesa);
 }
 
+/* El hover solo cambia color y subrayado: no cambia el grosor para que los enlaces no "salten" */
 .navbar-ts .nav-link {
     color: var(--ts-azul-oscuro);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: .5rem;
 }
 
-.navbar-ts .nav-link:hover,
-.navbar-ts .nav-link.active {
+.navbar-ts .nav-link:hover {
     color: var(--ts-azul);
+    text-decoration-color: rgba(20, 184, 180, .5);
+}
+
+.navbar-ts .nav-link.active {
+    color: var(--ts-azul-oscuro);
     font-weight: 600;
+    text-decoration-color: var(--ts-turquesa);
 }
 
 .logo-navbar {
     height: 38px;
 }
 
-/* Botones principales en azul */
+/* Usuario conectado y botón de cerrar sesión */
+.navbar-usuario {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+/* En móvil el menú plegado se separa del logo y el usuario queda abajo */
+@media (max-width: 991.98px) {
+    .navbar-ts .navbar-collapse {
+        padding-top: .5rem;
+    }
+
+    .navbar-usuario {
+        justify-content: space-between;
+        border-top: 1px solid #e3e8ee;
+        margin-top: .5rem;
+        padding-top: .75rem;
+    }
+
+    .navbar-usuario .btn {
+        min-height: 2.75rem;
+    }
+}
+
+/* ---------- Botones ---------- */
+
 .btn-primary {
     background-color: var(--ts-azul);
     border-color: var(--ts-azul);
@@ -51,6 +93,22 @@ body {
     border-color: var(--ts-azul);
 }
 
+/* Botones de las tablas: área de toque de al menos 40px (44px en móvil) */
+.btn-accion {
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ---------- Formularios ---------- */
+
+.form-control,
+.form-select {
+    border-color: var(--ts-borde-campo);
+}
+
+/* ---------- Títulos y tarjetas ---------- */
+
 .titulo {
     color: var(--ts-azul-oscuro);
 }
@@ -60,7 +118,97 @@ body {
     border-radius: .75rem;
 }
 
-/* Login y registro */
+/* Encabezado de las listas: título y botón se apilan si no caben */
+.encabezado-pagina {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+/* ---------- Tablas que se vuelven tarjetas en móvil ---------- */
+
+@media (max-width: 767.98px) {
+    /* La tarjeta que envuelve la lista desaparece para no tener tarjetas dentro de tarjetas */
+    .card-listado {
+        background: transparent;
+        box-shadow: none !important;
+    }
+
+    .card-listado > .card-body {
+        padding: 0;
+    }
+
+    .tabla-tarjetas thead {
+        display: none;
+    }
+
+    .tabla-tarjetas,
+    .tabla-tarjetas tbody,
+    .tabla-tarjetas tr,
+    .tabla-tarjetas td {
+        display: block;
+        width: 100%;
+    }
+
+    /* Cada fila es una tarjeta */
+    .tabla-tarjetas tr {
+        background-color: #fff;
+        border: 1px solid #e3e8ee;
+        border-radius: .75rem;
+        padding: .75rem 1rem;
+        margin-bottom: .75rem;
+    }
+
+    /* Cada dato muestra su nombre a la izquierda (sale del atributo data-label) */
+    .tabla-tarjetas > :not(caption) > * > td {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        padding: .25rem 0;
+        border: 0;
+        text-align: right;
+    }
+
+    .tabla-tarjetas td[data-label]::before {
+        content: attr(data-label);
+        color: #5b6675;
+        font-size: .875rem;
+        text-align: left;
+    }
+
+    /* El dato principal va arriba, sin etiqueta */
+    .tabla-tarjetas td.celda-principal {
+        display: block;
+        text-align: left;
+        padding-bottom: .5rem;
+    }
+
+    .tabla-tarjetas td.col-id {
+        display: none;
+    }
+
+    /* Botones a lo ancho, con 44px de alto */
+    .tabla-tarjetas td.celda-acciones {
+        justify-content: flex-end;
+        padding-top: .75rem;
+    }
+
+    .tabla-tarjetas .btn-accion {
+        min-height: 2.75rem;
+    }
+
+    .tabla-tarjetas td.celda-vacia {
+        display: block;
+        text-align: center;
+    }
+}
+
+/* ---------- Login y registro ---------- */
+
 .auth-fondo {
     background: linear-gradient(135deg, var(--ts-azul-oscuro) 0%, var(--ts-azul) 60%, var(--ts-turquesa) 100%);
     min-height: 100vh;
