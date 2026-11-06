@@ -1,5 +1,6 @@
 package com.tratoseguro.repository;
 
+import com.tratoseguro.model.Rol;
 import com.tratoseguro.model.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -15,6 +16,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByUsername(String username);
 
     List<Usuario> findAllByOrderByIdAsc();
+
+    // Para los dropdowns (por ejemplo, escoger el comprador de un trato)
+    List<Usuario> findByRolOrderByNombreAsc(Rol rol);
 
     // Búsqueda del administrador por nombre, usuario o cédula
     List<Usuario> findByNombreContainingIgnoreCaseOrUsernameContainingIgnoreCaseOrCedulaContainingOrderByIdAsc(

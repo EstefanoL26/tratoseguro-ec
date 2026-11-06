@@ -76,6 +76,12 @@ public class UsuarioService implements UserDetailsService {
                 texto, texto, texto);
     }
 
+    // Usuario conectado (Spring Security solo guarda el username)
+    public Usuario buscarPorUsername(String username) {
+        return usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+    }
+
     public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id).orElse(null);
     }
