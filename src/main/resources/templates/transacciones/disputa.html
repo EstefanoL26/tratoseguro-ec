@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Abrir disputa')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('tratos')}"></nav>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+            <div class="card">
+                <div class="card-body p-4">
+                    <h1 class="titulo mb-1">Abrir disputa</h1>
+                    <p class="subtitulo mb-4">
+                        <span th:text="${t.producto}">Bicicleta aro 29</span> ·
+                        <span th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 200,00</span> retenidos
+                    </p>
+
+                    <div class="aviso-info mb-4" role="note">
+                        <i class="bi bi-info-circle" aria-hidden="true"></i>
+                        <div>Mientras dure la disputa el dinero sigue retenido y los plazos se pausan. Un mediador revisará la evidencia de ambas partes y decidirá.</div>
+                    </div>
+
+                    <form th:action="@{/transacciones/{id}/disputa(id=${t.id})}" method="post">
+                        <div class="mb-3">
+                            <label for="motivo" class="form-label">¿Qué pasó? *</label>
+                            <textarea id="motivo" name="motivo" rows="3" class="form-control" required minlength="10" maxlength="255"
+                                      aria-describedby="motivo-ayuda"></textarea>
+                            <div id="motivo-ayuda" class="form-text">Entre 10 y 255 caracteres. Por ejemplo: «La bicicleta llegó con el freno roto».</div>
+                        </div>
+                        <fieldset class="grupo-campos">
+                            <legend>Primera evidencia (opcional)</legend>
+                            <div class="mb-3">
+                                <label for="evidencia" class="form-label">Descripción</label>
+                                <input type="text" id="evidencia" name="evidencia" class="form-control" maxlength="255"
+                                       placeholder="Foto del producto recibido">
+                            </div>
+                            <div class="mb-4">
+                                <label for="enlace" class="form-label">Enlace al archivo</label>
+                                <input type="url" id="enlace" name="enlace" class="form-control" maxlength="255"
+                                       placeholder="https://drive.google.com/..." aria-describedby="enlace-ayuda">
+                                <div id="enlace-ayuda" class="form-text">Sube la foto o el video a Google Drive y pega aquí el enlace.</div>
+                            </div>
+                        </fieldset>
+                        <div class="d-flex justify-content-end gap-2">
+                            <a th:href="@{/transacciones/{id}(id=${t.id})}" class="btn btn-outline-secondary">Volver</a>
+                            <button type="submit" class="btn btn-danger">Abrir disputa</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

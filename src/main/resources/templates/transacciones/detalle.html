@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Trato #' + ${t.id})}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('tratos')}"></nav>
+
+<main class="container py-4"
+      th:with="estado=${t.estado.name()},
+               paso=${estado == 'CREADA' or estado == 'CANCELADA'} ? 1 : (${estado == 'PAGADA'} ? 2 : (${estado == 'ENVIADA'} ? 3 : (${estado == 'LIBERADA'} ? 4 : (${envio != null} ? 3 : 2))))">
+
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <a th:href="@{/transacciones}" class="d-inline-block mb-3 small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a los tratos</a>
+
+    <!-- ---------- Encabezado: producto, estado y monto ---------- -->
+    <div class="cabecera-trato">
+        <div>
+            <p class="subtitulo mb-1">Trato #<span th:text="${t.id}">1</span> · creado el <span th:text="${#temporals.format(t.fechaCreacion, 'dd/MM/yyyy')}">01/10/2026</span></p>
+            <h1 class="titulo mb-2" th:text="${t.producto}">Bicicleta aro 29</h1>
+            <span th:replace="~{fragmentos/base :: estado(${t.estado})}"></span>
+        </div>
+        <div class="text-sm-end">
+            <p class="subtitulo mb-0">Monto protegido</p>
+            <p class="monto-grande mb-0" th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 200,00</p>
+        </div>
+    </div>
+
+    <!-- ---------- Progreso: Creada -> Pagada -> Enviada -> Liberada ---------- -->
+    <ol class="pasos" aria-label="Progreso del trato">
+        <li th:classappend="${paso > 1} ? 'hecho' : 'actual'">Creada</li>
+        <li th:classappend="${paso > 2} ? 'hecho' : (${paso == 2} ? 'actual')">Pagada</li>
+        <li th:classappend="${paso > 3} ? 'hecho' : (${paso == 3} ? 'actual')">Enviada</li>
+        <li th:classappend="${paso == 4} ? 'hecho actual'">Liberada</li>
+    </ol>
+
+    <div th:if="${estado == 'EN_DISPUTA'}" class="aviso-info mb-4" role="note">
+        <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+        <div>El trato está en disputa. El dinero sigue retenido y los plazos quedan pausados hasta que decida el mediador.</div>
+    </div>
+    <div th:if="${estado == 'CANCELADA'}" class="aviso-info mb-4" role="note">
+        <i class="bi bi-x-circle" aria-hidden="true"></i><div>El trato se canceló antes del pago; no hubo movimientos de dinero.</div>
+    </div>
+
+    <div class="row g-4">
+        <!-- ================= Columna principal ================= -->
+        <div class="col-lg-8">
+
+            <!-- ---------- Acciones según el rol y el estado ---------- -->
+            <section class="card mb-4" th:if="${!t.estado.esFinal()}" aria-labelledby="titulo-acciones">
+                <div class="card-body p-4">
+                    <h2 id="titulo-acciones" class="ficha-titulo">¿Qué sigue?</h2>
+
+                    <!-- CREADA: el comprador paga; el vendedor puede editar, eliminar o cancelar -->
+                    <th:block th:if="${estado == 'CREADA'}">
+                        <div th:if="${esComprador}" class="d-flex flex-wrap gap-2 align-items-center">
+                            <a th:href="@{/transacciones/{id}/pago(id=${t.id})}" class="btn btn-primary">
+                                <i class="bi bi-shield-lock" aria-hidden="true"></i>Pagar y retener
+                                <span th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 200,00</span>
+                            </a>
+                            <form th:action="@{/transacciones/{id}/cancelar(id=${t.id})}" method="post"
+                                  onsubmit="return confirm('¿Cancelar este trato? No se podrá pagar después.');">
+                                <button type="submit" class="btn btn-outline-secondary">Cancelar trato</button>
+                            </form>
+                        </div>
+                        <div th:if="${esVendedor}">
+                            <p class="mb-3">Esperando el pago de <strong th:text="${t.comprador.nombre}">Ana Torres</strong>. Mientras tanto puedes corregir el trato.</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a th:href="@{/transacciones/editar/{id}(id=${t.id})}" class="btn btn-outline-primary"><i class="bi bi-pencil" aria-hidden="true"></i>Editar</a>
+                                <form th:action="@{/transacciones/eliminar/{id}(id=${t.id})}" method="post"
+                                      onsubmit="return confirm('¿Eliminar este trato?');">
+                                    <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash3" aria-hidden="true"></i>Eliminar</button>
+                                </form>
+                                <form th:action="@{/transacciones/{id}/cancelar(id=${t.id})}" method="post"
+                                      onsubmit="return confirm('¿Cancelar este trato?');">
+                                    <button type="submit" class="btn btn-outline-secondary">Cancelar trato</button>
+                                </form>
+                            </div>
+                        </div>
+                        <p th:unless="${esComprador or esVendedor}" class="mb-0 text-muted">Esperando el pago del comprador.</p>
+                    </th:block>
+
+                    <!-- PAGADA: el vendedor registra el envío; el comprador espera o abre una disputa -->
+                    <th:block th:if="${estado == 'PAGADA'}">
+                        <form th:if="${esVendedor}" th:action="@{/transacciones/{id}/envio(id=${t.id})}" method="post" class="row g-3">
+                            <p class="mb-0">El dinero está retenido. Envía el producto antes del límite y registra la guía.</p>
+                            <div class="col-sm-6">
+                                <label for="transportista" class="form-label">Transportista *</label>
+                                <select id="transportista" name="transportista" class="form-select" required>
+                                    <option value="">-- Escoge --</option>
+                                    <option th:each="tr : ${transportistas}" th:value="${tr}" th:text="${tr}">Servientrega</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="guia" class="form-label">Número de guía *</label>
+                                <input type="text" id="guia" name="guia" class="form-control" required maxlength="40"
+                                       autocapitalize="characters" aria-describedby="guia-ayuda" placeholder="SVT-0049381726">
+                                <div id="guia-ayuda" class="form-text">Letras, números y guiones (5 a 40 caracteres).</div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-truck" aria-hidden="true"></i>Registrar envío</button>
+                            </div>
+                        </form>
+                        <div th:if="${esComprador}" class="d-flex flex-wrap gap-2 align-items-center">
+                            <p class="mb-0 me-auto">Tu dinero está retenido. El vendedor debe enviar hasta el
+                                <strong th:text="${#temporals.format(t.fechaLimiteEnvio, 'dd/MM/yyyy')}">08/10/2026</strong>; si no lo hace, te lo devolvemos completo.</p>
+                            <a th:href="@{/transacciones/{id}/disputa(id=${t.id})}" class="btn btn-outline-danger">Abrir disputa</a>
+                        </div>
+                        <p th:unless="${esComprador or esVendedor}" class="mb-0 text-muted">Esperando que el vendedor registre el envío.</p>
+                    </th:block>
+
+                    <!-- ENVIADA: el comprador confirma la recepción o abre una disputa -->
+                    <th:block th:if="${estado == 'ENVIADA'}">
+                        <div th:if="${esComprador}">
+                            <p class="mb-3">Revisa el producto. Si todo está bien, confirma y se paga al vendedor. Si no reclamas hasta el
+                                <strong th:text="${#temporals.format(t.fechaLimiteRevision, 'dd/MM/yyyy')}">16/10/2026</strong>, el pago se libera solo.</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <form th:action="@{/transacciones/{id}/confirmar(id=${t.id})}" method="post"
+                                      onsubmit="return confirm('¿Confirmas que recibiste el producto en buen estado? Se liberará el pago al vendedor.');">
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle" aria-hidden="true"></i>Confirmar recepción</button>
+                                </form>
+                                <a th:href="@{/transacciones/{id}/disputa(id=${t.id})}" class="btn btn-outline-danger">Abrir disputa</a>
+                            </div>
+                        </div>
+                        <p th:unless="${esComprador}" class="mb-0 text-muted">Esperando que el comprador confirme la recepción.</p>
+                    </th:block>
+
+                    <!-- EN_DISPUTA: las partes aportan evidencia; el mediador decide -->
+                    <th:block th:if="${estado == 'EN_DISPUTA'}">
+                        <p class="mb-0" th:if="${esComprador or esVendedor}">Aporta toda la evidencia que tengas en la sección de la disputa.</p>
+                        <a th:if="${esMediador and disputa != null}" th:href="@{/disputas/{id}/resolver(id=${disputa.id})}" class="btn btn-primary mt-2">
+                            <i class="bi bi-clipboard-check" aria-hidden="true"></i>Resolver disputa
+                        </a>
+                        <p th:unless="${esComprador or esVendedor or esMediador}" class="mb-0 text-muted">En manos del mediador.</p>
+                    </th:block>
+                </div>
+            </section>
+
+            <!-- ---------- Datos del trato ---------- -->
+            <section class="card mb-4" aria-labelledby="titulo-datos">
+                <div class="card-body p-4">
+                    <h2 id="titulo-datos" class="ficha-titulo">Datos del trato</h2>
+                    <dl class="datos">
+                        <dt>Vendedor</dt><dd th:text="${t.vendedor.nombre}">Carlos Mena</dd>
+                        <dt>Comprador</dt><dd th:text="${t.comprador.nombre}">Ana Torres</dd>
+                        <dt th:if="${t.descripcion}">Descripción</dt><dd th:if="${t.descripcion}" th:text="${t.descripcion}">Descripción</dd>
+                        <dt>Días hábiles para enviar</dt><dd class="numero" th:text="${t.diasEntrega}">5</dd>
+                        <dt th:if="${t.metodoPago}">Pago</dt><dd th:if="${t.metodoPago}" th:text="${t.metodoPago.descripcion}">Pago simulado</dd>
+                        <dt th:if="${t.fechaPago}">Pagado el</dt><dd th:if="${t.fechaPago}" class="numero" th:text="${#temporals.format(t.fechaPago, 'dd/MM/yyyy HH:mm')}">01/10/2026</dd>
+                    </dl>
+                </div>
+            </section>
+
+            <!-- ---------- Plazos en días hábiles ---------- -->
+            <section class="card mb-4" th:if="${t.fechaLimiteEnvio != null}" aria-labelledby="titulo-plazos">
+                <div class="card-body p-4">
+                    <h2 id="titulo-plazos" class="ficha-titulo">Plazos (días hábiles, sin feriados)</h2>
+                    <dl class="datos">
+                        <dt>Límite de envío</dt>
+                        <dd>
+                            <span class="numero" th:text="${#temporals.format(t.fechaLimiteEnvio, 'EEEE dd/MM/yyyy')}">jueves 08/10/2026</span>
+                            <small th:if="${estado == 'PAGADA' and diasParaEnviar != null}" class="d-block"
+                                   th:classappend="${diasParaEnviar < 0} ? 'plazo-vencido' : 'text-muted'"
+                                   th:text="${diasParaEnviar < 0} ? 'Vencido: se reembolsará en la próxima revisión' : (${diasParaEnviar == 0} ? 'Vence hoy' : 'Vence en ' + ${diasParaEnviar} + (${diasParaEnviar == 1} ? ' día' : ' días'))">Faltan 3 días</small>
+                        </dd>
+                        <th:block th:if="${t.fechaLimiteRevision != null}">
+                            <dt>Límite de revisión</dt>
+                            <dd>
+                                <span class="numero" th:text="${#temporals.format(t.fechaLimiteRevision, 'EEEE dd/MM/yyyy')}">viernes 16/10/2026</span>
+                                <small th:if="${estado == 'ENVIADA' and diasParaRevisar != null}" class="d-block"
+                                       th:classappend="${diasParaRevisar < 0} ? 'plazo-vencido' : 'text-muted'"
+                                       th:text="${diasParaRevisar < 0} ? 'Vencido: se liberará en la próxima revisión' : (${diasParaRevisar == 0} ? 'Vence hoy' : 'Vence en ' + ${diasParaRevisar} + (${diasParaRevisar == 1} ? ' día' : ' días'))">Faltan 5 días</small>
+                            </dd>
+                        </th:block>
+                    </dl>
+                </div>
+            </section>
+
+            <!-- ---------- Envío ---------- -->
+            <section class="card mb-4" th:if="${envio != null}" aria-labelledby="titulo-envio">
+                <div class="card-body p-4">
+                    <h2 id="titulo-envio" class="ficha-titulo">Envío</h2>
+                    <dl class="datos">
+                        <dt>Transportista</dt><dd th:text="${envio.transportista}">Servientrega</dd>
+                        <dt>Guía</dt><dd class="numero fw-semibold" th:text="${envio.guia}">SVT-0049381726</dd>
+                        <dt>Enviado el</dt><dd class="numero" th:text="${#temporals.format(envio.fecha, 'dd/MM/yyyy HH:mm')}">05/10/2026</dd>
+                    </dl>
+                </div>
+            </section>
+
+            <!-- ---------- Disputa y evidencias ---------- -->
+            <section class="card mb-4" th:if="${disputa != null}" aria-labelledby="titulo-disputa">
+                <div class="card-body p-4">
+                    <h2 id="titulo-disputa" class="ficha-titulo">Disputa</h2>
+                    <p class="mb-1"><strong>Motivo:</strong> <span th:text="${disputa.motivo}">Motivo</span></p>
+                    <p class="subtitulo">Abierta el <span th:text="${#temporals.format(disputa.fechaApertura, 'dd/MM/yyyy HH:mm')}">01/10/2026</span></p>
+
+                    <h3 class="h6 mt-3">Evidencia</h3>
+                    <div th:if="${#lists.isEmpty(evidencias)}" class="text-muted mb-3">Todavía no hay evidencia.</div>
+                    <div th:each="ev : ${evidencias}" class="evidencia">
+                        <div>
+                            <span class="autor" th:text="${ev.usuario.nombre}">Ana Torres</span>
+                            <span class="text-muted" th:text="${t.esComprador(ev.usuario)} ? '· Comprador' : '· Vendedor'">· Comprador</span>
+                            <span class="cuando" th:text="' · ' + ${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}"></span>
+                        </div>
+                        <p class="mb-1" th:text="${ev.descripcion}">Descripción</p>
+                        <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow">
+                            <i class="bi bi-paperclip" aria-hidden="true"></i> Ver archivo
+                        </a>
+                    </div>
+
+                    <!-- Las partes pueden aportar más evidencia mientras la disputa siga abierta -->
+                    <form th:if="${!disputa.resuelta and (esComprador or esVendedor)}"
+                          th:action="@{/transacciones/{id}/evidencia(id=${t.id})}" method="post" class="mt-3">
+                        <div class="mb-2">
+                            <label for="descripcion" class="form-label">Agregar evidencia *</label>
+                            <textarea id="descripcion" name="descripcion" rows="2" class="form-control" required maxlength="255"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="enlace" class="form-label">Enlace al archivo (opcional)</label>
+                            <input type="url" id="enlace" name="enlace" class="form-control" maxlength="255"
+                                   placeholder="https://drive.google.com/..." aria-describedby="enlace-ayuda">
+                            <div id="enlace-ayuda" class="form-text">Sube la foto o el documento a Google Drive y pega aquí el enlace.</div>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>Agregar evidencia</button>
+                    </form>
+
+                    <div th:if="${disputa.resuelta}" class="aviso-info mt-3">
+                        <i class="bi bi-check2-square" aria-hidden="true"></i>
+                        <div>
+                            <strong th:text="${disputa.decision.descripcion}">Decisión</strong>
+                            <span th:if="${disputa.viaRapida}"> (vía rápida por fraude)</span>
+                            <span th:text="' — ' + ${disputa.mediador.nombre}"> — Paula Ríos</span>
+                            <p class="mb-0 mt-1" th:text="${disputa.justificacion}">Justificación</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ---------- Liquidación (cuando el trato se cerró con dinero) ---------- -->
+            <section class="card mb-4" th:if="${t.comision != null}" aria-labelledby="titulo-liquidacion">
+                <div class="card-body p-4">
+                    <h2 id="titulo-liquidacion" class="ficha-titulo">Liquidación</h2>
+                    <table class="tabla-liquidacion">
+                        <caption class="visually-hidden">Reparto del dinero retenido</caption>
+                        <tr><td>Reembolso al comprador</td><td th:text="'$ ' + ${#numbers.formatDecimal(t.reembolso, 1, 'POINT', 2, 'COMMA')}">$ 0,00</td></tr>
+                        <tr><td>Comisión de la plataforma (3 %)</td><td th:text="'$ ' + ${#numbers.formatDecimal(t.comision, 1, 'POINT', 2, 'COMMA')}">$ 6,00</td></tr>
+                        <tr><td>Neto al vendedor</td><td th:text="'$ ' + ${#numbers.formatDecimal(t.montoVendedor, 1, 'POINT', 2, 'COMMA')}">$ 194,00</td></tr>
+                        <tr class="total"><td>Total (debe igualar el monto retenido)</td><td th:text="'$ ' + ${#numbers.formatDecimal(t.reembolso + t.comision + t.montoVendedor, 1, 'POINT', 2, 'COMMA')}">$ 200,00</td></tr>
+                    </table>
+                    <p class="mt-2 mb-0"
+                       th:classappend="${(t.reembolso + t.comision + t.montoVendedor).compareTo(t.monto) == 0} ? 'cuadre-ok' : 'cuadre-error'">
+                        <i class="bi" th:classappend="${(t.reembolso + t.comision + t.montoVendedor).compareTo(t.monto) == 0} ? 'bi-check-circle' : 'bi-x-circle'" aria-hidden="true"></i>
+                        <span th:text="${(t.reembolso + t.comision + t.montoVendedor).compareTo(t.monto) == 0} ? 'Cuadra con el monto retenido' : 'No cuadra'">Cuadra</span>
+                    </p>
+                </div>
+            </section>
+
+            <!-- ---------- Movimientos de dinero ---------- -->
+            <section class="card mb-4" th:unless="${#lists.isEmpty(movimientos)}" aria-labelledby="titulo-movimientos">
+                <div class="card-body p-4">
+                    <h2 id="titulo-movimientos" class="ficha-titulo">Movimientos de dinero</h2>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                            <tr><th>Tipo</th><th class="text-end">Monto</th><th>Fecha</th><th>Referencia</th></tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="m : ${movimientos}">
+                                <td th:text="${m.tipo.descripcion}">Retención</td>
+                                <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
+                                <td class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
+                                <td class="small text-muted text-break" th:text="${m.referencia ?: '—'}">SIMULADO</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= Historial (expediente) ================= -->
+        <aside class="col-lg-4">
+            <section class="card" aria-labelledby="titulo-historial">
+                <div class="card-body p-4">
+                    <h2 id="titulo-historial" class="ficha-titulo">Historial</h2>
+                    <ol class="linea-tiempo">
+                        <li th:each="h : ${historial}">
+                            <div class="fw-semibold" th:text="${h.estadoNuevo.descripcion}">Pagada</div>
+                            <div class="small" th:text="${h.motivo}">Motivo</div>
+                            <div class="cuando" th:text="${h.describirAutor()} + ' · ' + ${#temporals.format(h.fecha, 'dd/MM/yyyy HH:mm')}">Ana Torres · 01/10/2026</div>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+        </aside>
+    </div>
+</main>
+
+</body>
+</html>

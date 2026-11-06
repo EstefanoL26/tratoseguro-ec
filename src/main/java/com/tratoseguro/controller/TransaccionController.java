@@ -11,6 +11,7 @@ import com.tratoseguro.service.PagoService;
 import com.tratoseguro.service.ReglaNegocioException;
 import com.tratoseguro.service.TransaccionService;
 import com.tratoseguro.service.UsuarioService;
+import com.tratoseguro.util.Reloj;
 import jakarta.validation.Valid;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -88,6 +91,8 @@ public class TransaccionController {
         model.addAttribute("disputa", disputa);
         model.addAttribute("evidencias", disputa == null ? List.of() : disputaService.evidencias(disputa.getId()));
         model.addAttribute("transportistas", TRANSPORTISTAS);
+        model.addAttribute("diasParaEnviar", diasHasta(transaccion.getFechaLimiteEnvio()));
+        model.addAttribute("diasParaRevisar", diasHasta(transaccion.getFechaLimiteRevision()));
         return "transacciones/detalle";
     }
 
@@ -243,6 +248,11 @@ public class TransaccionController {
     }
 
     // ---------- Ayudantes ----------
+
+    // Días que faltan para un plazo (negativo si ya venció); null si el plazo todavía no existe
+    private Long diasHasta(LocalDate limite) {
+        return limite == null ? null : ChronoUnit.DAYS.between(Reloj.hoy(), limite);
+    }
 
     private void cargarFormulario(Model model, Long compradorId) {
         model.addAttribute("compradores", transaccionService.compradoresDisponibles());

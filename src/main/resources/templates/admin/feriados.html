@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Feriados')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('feriados')}"></nav>
+
+<main class="container py-4">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <div class="encabezado-pagina">
+        <div>
+            <h1 class="titulo mb-0">Feriados</h1>
+            <p class="subtitulo mb-0">Los plazos del core se cuentan en días hábiles y saltan estas fechas. Registra aquí los traslados que decrete el Gobierno.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <section class="col-lg-4" aria-labelledby="titulo-nuevo">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h2 id="titulo-nuevo" class="ficha-titulo">Agregar feriado</h2>
+                    <form th:action="@{/admin/feriados/guardar}" th:object="${feriado}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="fecha" class="form-label">Fecha *</label>
+                            <input type="date" th:field="*{fecha}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('fecha')} ? 'is-invalid'"
+                                   th:aria-invalid="${#fields.hasErrors('fecha')} ? 'true' : null"
+                                   th:aria-describedby="${#fields.hasErrors('fecha')} ? 'fecha-error' : null">
+                            <div id="fecha-error" class="invalid-feedback" th:errors="*{fecha}"></div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="nombre" class="form-label">Nombre *</label>
+                            <input type="text" th:field="*{nombre}" class="form-control" maxlength="100"
+                                   th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid'"
+                                   th:aria-invalid="${#fields.hasErrors('nombre')} ? 'true' : null"
+                                   th:aria-describedby="${#fields.hasErrors('nombre')} ? 'nombre-error' : null">
+                            <div id="nombre-error" class="invalid-feedback" th:errors="*{nombre}"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>Agregar</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-8" aria-labelledby="titulo-lista">
+            <div class="card card-listado">
+                <div class="card-body p-4">
+                    <h2 id="titulo-lista" class="ficha-titulo">Registrados (<span class="numero" th:text="${#lists.size(feriados)}">22</span>)</h2>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 tabla-tarjetas">
+                            <thead>
+                            <tr><th>Fecha</th><th>Nombre</th><th class="text-end">Acción</th></tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="f : ${feriados}">
+                                <td class="celda-principal numero fw-semibold" th:text="${#temporals.format(f.fecha, 'EEEE dd/MM/yyyy')}">jueves 01/01/2026</td>
+                                <td data-label="Nombre" th:text="${f.nombre}">Año Nuevo</td>
+                                <td class="text-end celda-acciones">
+                                    <form th:action="@{/admin/feriados/eliminar/{id}(id=${f.id})}" method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar este feriado? Los plazos nuevos dejarán de saltarlo.');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-accion"
+                                                th:aria-label="'Eliminar ' + ${f.nombre}"><i class="bi bi-trash3" aria-hidden="true"></i>Eliminar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+</body>
+</html>

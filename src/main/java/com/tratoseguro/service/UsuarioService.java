@@ -4,8 +4,10 @@ import com.tratoseguro.model.Ciudad;
 import com.tratoseguro.model.Rol;
 import com.tratoseguro.model.Usuario;
 import com.tratoseguro.repository.CiudadRepository;
+import com.tratoseguro.repository.NotificacionRepository;
 import com.tratoseguro.repository.UsuarioRepository;
 import com.tratoseguro.util.ValidadorCedula;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,12 +28,14 @@ public class UsuarioService implements UserDetailsService {
 
     private final UsuarioRepository usuarioRepository;
     private final CiudadRepository ciudadRepository;
+    private final NotificacionRepository notificacionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UsuarioService(UsuarioRepository usuarioRepository, CiudadRepository ciudadRepository,
-                          PasswordEncoder passwordEncoder) {
+                          NotificacionRepository notificacionRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.ciudadRepository = ciudadRepository;
+        this.notificacionRepository = notificacionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -163,7 +167,15 @@ public class UsuarioService implements UserDetailsService {
         if (usuario == null || usuario.getUsername().equals(usernameActual)) {
             return false;
         }
-        usuarioRepository.delete(usuario);
+        // Sus avisos se borran; pero si participa en tratos, su historial es parte del expediente y no se borra
+        notificacionRepository.deleteAll(notificacionRepository.findByUsuarioId(id));
+        try {
+            usuarioRepository.delete(usuario);
+            usuarioRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ReglaNegocioException("No se puede eliminar a " + usuario.getNombre()
+                    + ": participa en tratos y su historial forma parte del expediente.");
+        }
         return true;
     }
 

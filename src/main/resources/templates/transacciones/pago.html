@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Pagar trato')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('tratos')}"></nav>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+            <div th:if="${cancelado}" class="alert alert-warning" role="status">Cancelaste el pago en Stripe. Tu trato sigue pendiente; puedes intentarlo de nuevo.</div>
+
+            <div class="card">
+                <div class="card-body p-4">
+                    <h1 class="titulo mb-4">Pagar y retener</h1>
+
+                    <!-- Resumen del trato -->
+                    <dl class="datos mb-4">
+                        <dt>Producto</dt><dd class="fw-semibold" th:text="${t.producto}">Bicicleta aro 29</dd>
+                        <dt>Vendedor</dt><dd th:text="${t.vendedor.nombre}">Carlos Mena</dd>
+                        <dt>Envío</dt><dd th:text="${t.diasEntrega} + ' días hábiles después del pago'">5 días hábiles</dd>
+                        <dt>Total a pagar</dt><dd class="monto fs-5" th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 200,00</dd>
+                    </dl>
+
+                    <div class="aviso-prueba mb-4" role="note">
+                        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                        <div>
+                            <strong>Pago de prueba: no se realiza ningún cobro real.</strong>
+                            <span th:if="${stripeActivo}">Pagarás en Stripe Checkout en modo de prueba. Usa la tarjeta
+                                <span class="numero fw-semibold">4242 4242 4242 4242</span>, cualquier fecha futura y cualquier CVC.</span>
+                            <span th:unless="${stripeActivo}">Stripe no está configurado en este servidor, así que el pago se simula y se registra al instante.</span>
+                        </div>
+                    </div>
+
+                    <h2 class="ficha-titulo">Cómo te protegemos</h2>
+                    <ol class="small mb-4 ps-3">
+                        <li>TratoSeguro retiene tu dinero; el vendedor todavía no lo recibe.</li>
+                        <li>El vendedor tiene hasta el plazo de envío para mandar el producto, o te devolvemos todo.</li>
+                        <li>Cuando confirmas que lo recibiste, le pagamos al vendedor (menos 3 % de comisión).</li>
+                        <li>Si hay un problema, abres una disputa y un mediador decide.</li>
+                    </ol>
+
+                    <form th:action="@{/transacciones/{id}/pagar(id=${t.id})}" method="post">
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="acepto" name="acepto" value="true" required>
+                            <label class="form-check-label" for="acepto">
+                                Entiendo que TratoSeguro retiene el dinero hasta que confirme la recepción del producto.
+                            </label>
+                        </div>
+                        <div class="d-flex flex-wrap justify-content-end gap-2">
+                            <a th:href="@{/transacciones/{id}(id=${t.id})}" class="btn btn-outline-secondary">Volver</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                                <span th:text="'Pagar y retener $ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">Pagar y retener $ 200,00</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

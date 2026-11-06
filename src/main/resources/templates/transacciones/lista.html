@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Tratos')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('tratos')}"></nav>
+
+<main class="container py-4">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <div class="encabezado-pagina">
+        <div>
+            <h1 class="titulo mb-0">Tratos</h1>
+            <p class="subtitulo mb-0" th:if="${esVendedorActual}">Tus ventas: el dinero queda retenido hasta que el comprador confirme.</p>
+            <p class="subtitulo mb-0" th:if="${rolActual?.name() == 'COMPRADOR'}">Tus compras protegidas: pagas y el vendedor cobra cuando confirmas la recepción.</p>
+            <p class="subtitulo mb-0" th:if="${esMediador}">Tratos que tienen o tuvieron una disputa.</p>
+            <p class="subtitulo mb-0" th:if="${esFinanzas}">Todos los tratos de la plataforma (solo lectura).</p>
+        </div>
+        <a th:if="${esVendedorActual}" th:href="@{/transacciones/nueva}" class="btn btn-primary">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i>Nuevo trato
+        </a>
+    </div>
+
+    <div class="card card-listado">
+        <div class="card-body">
+            <form th:action="@{/transacciones}" method="get" class="row g-2 mb-3" role="search">
+                <div class="col-sm-6 col-md-5">
+                    <label for="buscar" class="visually-hidden">Buscar por producto</label>
+                    <input type="search" id="buscar" name="buscar" th:value="${buscar}" class="form-control"
+                           placeholder="Buscar por producto">
+                </div>
+                <div class="col-sm-4 col-md-3">
+                    <label for="estado" class="visually-hidden">Filtrar por estado</label>
+                    <select id="estado" name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option th:each="e : ${estados}" th:value="${e}" th:text="${e.descripcion}"
+                                th:selected="${e == estadoFiltro}">Estado</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search" aria-hidden="true"></i>Buscar</button>
+                    <a th:if="${buscar != null or estadoFiltro != null}" th:href="@{/transacciones}" class="btn btn-outline-secondary">Limpiar</a>
+                </div>
+            </form>
+
+            <!-- En móvil cada fila se muestra como tarjeta (ver .tabla-tarjetas en estilos.css) -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 tabla-tarjetas">
+                    <thead>
+                    <tr>
+                        <th class="col-id">#</th>
+                        <th>Producto</th>
+                        <th>Vendedor</th>
+                        <th>Comprador</th>
+                        <th class="text-end">Monto</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="t : ${transacciones}">
+                        <td class="col-id numero text-muted" th:text="${t.id}">1</td>
+                        <td class="celda-principal">
+                            <a class="fw-semibold enlace-fila" th:href="@{/transacciones/{id}(id=${t.id})}" th:text="${t.producto}">Producto</a>
+                            <small class="text-muted d-block" th:text="${#temporals.format(t.fechaCreacion, 'dd/MM/yyyy')}">01/10/2026</small>
+                        </td>
+                        <td data-label="Vendedor" th:text="${t.vendedor.nombre}">Carlos Mena</td>
+                        <td data-label="Comprador" th:text="${t.comprador.nombre}">Ana Torres</td>
+                        <td data-label="Monto" class="text-end"><span th:replace="~{fragmentos/base :: dinero(${t.monto})}"></span></td>
+                        <td data-label="Estado"><span th:replace="~{fragmentos/base :: estado(${t.estado})}"></span></td>
+                        <td class="text-end celda-acciones">
+                            <a th:href="@{/transacciones/{id}(id=${t.id})}" class="btn btn-sm btn-outline-primary btn-accion"
+                               th:aria-label="'Ver el trato ' + ${t.producto}">Ver detalle</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transacciones)}">
+                        <td colspan="7" class="celda-vacia lista-vacia">
+                            <span th:if="${buscar != null or estadoFiltro != null}">Ningún trato coincide con el filtro.</span>
+                            <span th:unless="${buscar != null or estadoFiltro != null}">
+                                Todavía no hay tratos.
+                                <a th:if="${esVendedorActual}" th:href="@{/transacciones/nueva}">Crear el primero</a>
+                            </span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

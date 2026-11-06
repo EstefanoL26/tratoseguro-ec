@@ -121,7 +121,7 @@ class FlujoCoreTest {
     @Test
     void unUsuarioAjenoNoPuedeVerElTrato() {
         Usuario intruso = usuarioRepository.save(new Usuario("intruso", "intruso@correo.ec", passwordEncoder.encode("clave123"),
-                "Otro Comprador", "1709876542", Rol.COMPRADOR, null));
+                "Otro Comprador", "2403456789", Rol.COMPRADOR, null));
         Transaccion t = nuevoTrato("100.00");
         assertThrows(AccessDeniedException.class, () -> transaccionService.obtenerParaVer(t.getId(), intruso));
         assertTrue(transaccionService.listarPara(intruso, null, null).isEmpty());

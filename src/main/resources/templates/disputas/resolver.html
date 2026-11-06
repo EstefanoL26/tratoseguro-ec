@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Resolver disputa')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('disputas')}"></nav>
+
+<main class="container py-4">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <a th:href="@{/disputas}" class="d-inline-block mb-3 small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a las disputas</a>
+
+    <div class="cabecera-trato">
+        <div>
+            <p class="subtitulo mb-1">Disputa del trato #<span th:text="${t.id}">5</span></p>
+            <h1 class="titulo mb-2" th:text="${t.producto}">Consola PlayStation 5</h1>
+            <p class="mb-0"><strong>Motivo:</strong> <span th:text="${disputa.motivo}">Motivo</span></p>
+        </div>
+        <div class="text-sm-end">
+            <p class="subtitulo mb-0">Monto retenido</p>
+            <p class="monto-grande mb-0" th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 450,00</p>
+        </div>
+    </div>
+
+    <!-- ---------- Evidencia de ambas partes, lado a lado ---------- -->
+    <div class="row g-4 mb-4">
+        <section class="col-md-6" aria-labelledby="titulo-comprador">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h2 id="titulo-comprador" class="ficha-titulo">Comprador: <span th:text="${t.comprador.nombre}">Ana Torres</span></h2>
+                    <p th:if="${#lists.isEmpty(evidenciasComprador)}" class="text-muted mb-0">No aportó evidencia.</p>
+                    <div th:each="ev : ${evidenciasComprador}" class="evidencia">
+                        <p class="mb-1" th:text="${ev.descripcion}">Descripción</p>
+                        <span class="cuando" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span>
+                        <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow" class="ms-2">
+                            <i class="bi bi-paperclip" aria-hidden="true"></i> Ver archivo</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="col-md-6" aria-labelledby="titulo-vendedor">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h2 id="titulo-vendedor" class="ficha-titulo">Vendedor: <span th:text="${t.vendedor.nombre}">Carlos Mena</span></h2>
+                    <p th:if="${#lists.isEmpty(evidenciasVendedor)}" class="text-muted mb-0">No aportó evidencia.</p>
+                    <div th:each="ev : ${evidenciasVendedor}" class="evidencia">
+                        <p class="mb-1" th:text="${ev.descripcion}">Descripción</p>
+                        <span class="cuando" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span>
+                        <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow" class="ms-2">
+                            <i class="bi bi-paperclip" aria-hidden="true"></i> Ver archivo</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ---------- Decisión ---------- -->
+    <form th:action="@{/disputas/{id}/resolver(id=${disputa.id})}" method="post" id="formResolver"
+          th:attr="data-monto=${t.monto}">
+        <div class="row g-4">
+            <section class="col-lg-7" aria-labelledby="titulo-decision">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h2 id="titulo-decision" class="ficha-titulo">Decisión</h2>
+                        <fieldset class="mb-3">
+                            <legend class="visually-hidden">Escoge una decisión</legend>
+                            <div class="d-grid gap-2">
+                                <label th:each="d : ${decisiones}" class="opcion-decision">
+                                    <input class="form-check-input me-2" type="radio" name="decision" th:value="${d}" required>
+                                    <span th:text="${d.descripcion}">Decisión</span>
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        <div class="mb-3">
+                            <label for="reembolso" class="form-label">Monto a reembolsar (solo reembolso parcial)</label>
+                            <input type="number" id="reembolso" name="reembolso" class="form-control monto" step="0.01" min="0.01"
+                                   th:max="${t.monto}" inputmode="decimal" disabled aria-describedby="reembolso-ayuda">
+                            <div id="reembolso-ayuda" class="form-text">Mayor a $ 0,00 y menor al monto retenido.</div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="viaRapida" name="viaRapida" value="true">
+                            <label class="form-check-label" for="viaRapida">
+                                <strong>Vía rápida:</strong> confirmo un fraude. Se omite la negociación y se reembolsa todo de inmediato.
+                            </label>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="justificacion" class="form-label">Justificación *</label>
+                            <textarea id="justificacion" name="justificacion" rows="3" class="form-control" required
+                                      minlength="10" maxlength="500" aria-describedby="justificacion-ayuda"></textarea>
+                            <div id="justificacion-ayuda" class="form-text">Las dos partes verán esta explicación (10 a 500 caracteres).</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary"
+                                onclick="return confirm('¿Registrar la decisión? El reparto del dinero no se puede deshacer.');">
+                            <i class="bi bi-check2-circle" aria-hidden="true"></i>Registrar decisión y liquidar
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ---------- Liquidación: vista previa con verificación del cuadre ---------- -->
+            <aside class="col-lg-5" aria-labelledby="titulo-liquidacion">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h2 id="titulo-liquidacion" class="ficha-titulo">Liquidación</h2>
+                        <table class="tabla-liquidacion">
+                            <caption class="visually-hidden">Vista previa del reparto del dinero retenido</caption>
+                            <tr><td>Reembolso al comprador</td><td id="liqReembolso">—</td></tr>
+                            <tr><td>Comisión (3 % de lo que no se reembolsa)</td><td id="liqComision">—</td></tr>
+                            <tr><td>Neto al vendedor</td><td id="liqNeto">—</td></tr>
+                            <tr class="total"><td>Total</td><td id="liqTotal">—</td></tr>
+                        </table>
+                        <p id="liqCuadre" class="mt-2 mb-2 text-muted" aria-live="polite">Escoge una decisión para ver el reparto.</p>
+                        <p class="small text-muted mb-0">Es una vista previa. Al guardar, el servidor vuelve a calcular con BigDecimal y rechaza la decisión si R + comisión + neto no es igual al monto retenido.</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </form>
+</main>
+
+<script>
+    // Vista previa de la liquidación (la definitiva la calcula el servidor). Se trabaja en centavos para no perder precisión.
+    (function () {
+        const form = document.getElementById('formResolver');
+        const montoCentavos = Math.round(parseFloat(form.dataset.monto) * 100);
+        const campoReembolso = document.getElementById('reembolso');
+        const viaRapida = document.getElementById('viaRapida');
+        const radios = form.querySelectorAll('input[name="decision"]');
+        const formato = c => '$ ' + (c / 100).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        function decisionActual() {
+            if (viaRapida.checked) return 'REEMBOLSO_TOTAL';
+            const marcada = form.querySelector('input[name="decision"]:checked');
+            return marcada ? marcada.value : null;
+        }
+
+        function actualizar() {
+            const decision = decisionActual();
+            // La vía rápida siempre es reembolso total: se bloquean las otras opciones
+            radios.forEach(r => { r.disabled = viaRapida.checked; });
+            campoReembolso.disabled = viaRapida.checked || decision !== 'REEMBOLSO_PARCIAL';
+
+            const cuadre = document.getElementById('liqCuadre');
+            if (!decision) { return; }
+            let reembolso = 0;
+            if (decision === 'REEMBOLSO_TOTAL') reembolso = montoCentavos;
+            if (decision === 'REEMBOLSO_PARCIAL') reembolso = Math.round((parseFloat(campoReembolso.value) || 0) * 100);
+
+            const base = montoCentavos - reembolso;
+            const comision = Math.round(base * 3 / 100);
+            const neto = base - comision;
+            document.getElementById('liqReembolso').textContent = formato(reembolso);
+            document.getElementById('liqComision').textContent = formato(comision);
+            document.getElementById('liqNeto').textContent = formato(neto);
+            document.getElementById('liqTotal').textContent = formato(reembolso + comision + neto);
+
+            const valido = reembolso >= 0 && reembolso <= montoCentavos
+                && (decision !== 'REEMBOLSO_PARCIAL' || (reembolso > 0 && reembolso < montoCentavos));
+            cuadre.className = 'mt-2 mb-2 ' + (valido ? 'cuadre-ok' : 'cuadre-error');
+            cuadre.textContent = valido ? 'Cuadra con el monto retenido de ' + formato(montoCentavos)
+                                        : 'El reembolso parcial debe ser mayor a $ 0,00 y menor a ' + formato(montoCentavos);
+        }
+
+        form.addEventListener('input', actualizar);
+        form.addEventListener('change', actualizar);
+    })();
+</script>
+</body>
+</html>

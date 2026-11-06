@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head(${transaccion.id == null} ? 'Nuevo trato' : 'Editar trato')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('nuevo')}"></nav>
+
+<main class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+            <div class="card">
+                <div class="card-body p-4">
+                    <h1 class="titulo mb-1" th:text="${transaccion.id == null} ? 'Nuevo trato' : 'Editar trato #' + ${transaccion.id}">Trato</h1>
+                    <p class="subtitulo mb-4">Puedes editarlo o eliminarlo mientras el comprador no lo pague.</p>
+
+                    <!-- El mismo formulario crea y edita: si el id oculto viene vacío, se crea.
+                         Cada error se conecta a su campo con aria-describedby para los lectores de pantalla. -->
+                    <form th:action="@{/transacciones/guardar}" th:object="${transaccion}" method="post" novalidate>
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="mb-3">
+                            <label for="producto" class="form-label">Producto *</label>
+                            <input type="text" th:field="*{producto}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('producto')} ? 'is-invalid'"
+                                   th:aria-invalid="${#fields.hasErrors('producto')} ? 'true' : null"
+                                   th:aria-describedby="${#fields.hasErrors('producto')} ? 'producto-error' : null">
+                            <div id="producto-error" class="invalid-feedback" th:errors="*{producto}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea th:field="*{descripcion}" rows="2" class="form-control"
+                                      th:classappend="${#fields.hasErrors('descripcion')} ? 'is-invalid'"
+                                      th:aria-invalid="${#fields.hasErrors('descripcion')} ? 'true' : null"
+                                      th:aria-describedby="${#fields.hasErrors('descripcion')} ? 'descripcion-error' : null"></textarea>
+                            <div id="descripcion-error" class="invalid-feedback" th:errors="*{descripcion}"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 mb-3">
+                                <label for="monto" class="form-label">Monto ($) *</label>
+                                <input type="number" step="0.01" th:field="*{monto}" class="form-control monto" inputmode="decimal"
+                                       th:classappend="${#fields.hasErrors('monto')} ? 'is-invalid'"
+                                       th:aria-invalid="${#fields.hasErrors('monto')} ? 'true' : null"
+                                       th:aria-describedby="${#fields.hasErrors('monto')} ? 'monto-error monto-ayuda' : 'monto-ayuda'">
+                                <div id="monto-error" class="invalid-feedback" th:errors="*{monto}"></div>
+                                <div id="monto-ayuda" class="form-text">Entre $ 1,00 y $ 10.000,00. La plataforma cobra 3 % al liberar.</div>
+                            </div>
+                            <div class="col-sm-6 mb-3">
+                                <label for="diasEntrega" class="form-label">Días hábiles para enviar *</label>
+                                <input type="number" step="1" th:field="*{diasEntrega}" class="form-control" inputmode="numeric"
+                                       th:classappend="${#fields.hasErrors('diasEntrega')} ? 'is-invalid'"
+                                       th:aria-invalid="${#fields.hasErrors('diasEntrega')} ? 'true' : null"
+                                       th:aria-describedby="${#fields.hasErrors('diasEntrega')} ? 'diasEntrega-error diasEntrega-ayuda' : 'diasEntrega-ayuda'">
+                                <div id="diasEntrega-error" class="invalid-feedback" th:errors="*{diasEntrega}"></div>
+                                <div id="diasEntrega-ayuda" class="form-text">Sin contar fines de semana ni feriados.</div>
+                            </div>
+                        </div>
+
+                        <!-- Referencia a otra tabla: el comprador se escoge de la lista de usuarios con rol Comprador -->
+                        <div class="mb-4">
+                            <label for="compradorId" class="form-label">Comprador *</label>
+                            <select id="compradorId" name="compradorId" class="form-select"
+                                    th:classappend="${#fields.hasErrors('comprador')} ? 'is-invalid'"
+                                    th:aria-invalid="${#fields.hasErrors('comprador')} ? 'true' : null"
+                                    th:aria-describedby="${#fields.hasErrors('comprador')} ? 'comprador-error' : null">
+                                <option value="">-- Escoge el comprador --</option>
+                                <option th:each="c : ${compradores}" th:value="${c.id}"
+                                        th:text="${c.nombre} + ' (' + ${c.username} + ')'"
+                                        th:selected="${c.id == compradorId}">Comprador</option>
+                            </select>
+                            <div id="comprador-error" class="invalid-feedback" th:errors="*{comprador}"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a th:href="${transaccion.id == null} ? @{/transacciones} : @{/transacciones/{id}(id=${transaccion.id})}"
+                               class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

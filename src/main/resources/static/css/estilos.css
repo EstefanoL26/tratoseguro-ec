@@ -556,3 +556,358 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
     .t-input { animation: none !important; transform: none !important; }
 }
+
+/* =========================================================
+   Core: detalle del trato, pago, disputas, finanzas y notificaciones
+   ========================================================= */
+
+/* ---------- Campana de notificaciones ---------- */
+
+.campana {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    color: var(--ts-azul-oscuro);
+    font-size: 1.25rem;
+    text-decoration: none;
+}
+
+.campana:hover {
+    background-color: #eef3f8;
+    color: var(--ts-azul);
+}
+
+.campana-contador {
+    position: absolute;
+    top: .125rem;
+    right: .0625rem;
+    min-width: 1.125rem;
+    padding: 0 .3rem;
+    border-radius: 999px;
+    background-color: #c62f36;
+    color: #fff;
+    font-size: .6875rem;
+    font-weight: 700;
+    line-height: 1.125rem;
+    text-align: center;
+}
+
+.rol-navbar {
+    color: var(--ts-texto-secundario);
+    font-size: .75rem;
+    line-height: 1.1;
+}
+
+/* ---------- Encabezado del detalle ---------- */
+
+.cabecera-trato {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.cabecera-trato .monto-grande {
+    font-size: clamp(1.5rem, 1.3rem + .8vw, 2rem);
+    font-weight: 700;
+    color: var(--ts-azul-oscuro);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+/* ---------- Progreso del trato: Creada -> Pagada -> Enviada -> Liberada ---------- */
+
+.pasos {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    counter-reset: paso;
+}
+
+.pasos li {
+    flex: 1;
+    position: relative;
+    padding-top: 1.75rem;
+    font-size: .875rem;
+    color: var(--ts-texto-secundario);
+    text-align: center;
+}
+
+/* Punto del paso */
+.pasos li::before {
+    content: "";
+    position: absolute;
+    top: .25rem;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    margin-left: -.5rem;
+    border-radius: 999px;
+    background-color: #fff;
+    border: 2px solid #c3ccd6;
+    z-index: 1;
+}
+
+/* Línea entre pasos */
+.pasos li + li::after {
+    content: "";
+    position: absolute;
+    top: .6875rem;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background-color: #d5dce4;
+}
+
+.pasos li.hecho {
+    color: var(--ts-tinta);
+}
+
+.pasos li.hecho::before {
+    background-color: var(--ts-turquesa);
+    border-color: var(--ts-turquesa);
+}
+
+.pasos li.hecho::after {
+    background-color: var(--ts-turquesa);
+}
+
+.pasos li.actual {
+    color: var(--ts-azul-oscuro);
+    font-weight: 700;
+}
+
+.pasos li.actual::before {
+    background-color: #fff;
+    border: 4px solid var(--ts-azul);
+}
+
+/* ---------- Fichas del detalle ---------- */
+
+.ficha-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ts-azul-oscuro);
+    margin-bottom: 1rem;
+}
+
+/* Lista de datos: nombre a la izquierda, valor a la derecha */
+.datos {
+    display: grid;
+    grid-template-columns: minmax(8rem, 40%) 1fr;
+    gap: .5rem 1rem;
+    margin: 0;
+}
+
+.datos dt {
+    color: var(--ts-texto-secundario);
+    font-weight: 500;
+}
+
+.datos dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.plazo-vencido {
+    color: #a1262e;
+    font-weight: 600;
+}
+
+/* ---------- Historial (expediente del trato) ---------- */
+
+.linea-tiempo {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.linea-tiempo li {
+    position: relative;
+    padding: 0 0 1.25rem 1.5rem;
+}
+
+.linea-tiempo li::before {
+    content: "";
+    position: absolute;
+    left: .25rem;
+    top: .375rem;
+    width: .625rem;
+    height: .625rem;
+    border-radius: 999px;
+    background-color: var(--ts-turquesa);
+}
+
+.linea-tiempo li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: .5rem;
+    top: 1.125rem;
+    bottom: .125rem;
+    width: 2px;
+    background-color: var(--ts-linea);
+}
+
+.linea-tiempo .cuando {
+    color: var(--ts-texto-secundario);
+    font-size: .8125rem;
+}
+
+/* ---------- Aviso de pago de prueba ---------- */
+
+.aviso-prueba {
+    display: flex;
+    gap: .75rem;
+    padding: .875rem 1rem;
+    border-radius: .75rem;
+    background-color: #fdf2df;
+    color: #6b4100;
+}
+
+.aviso-prueba .bi {
+    font-size: 1.25rem;
+    line-height: 1.2;
+}
+
+.aviso-info {
+    display: flex;
+    gap: .75rem;
+    padding: .875rem 1rem;
+    border-radius: .75rem;
+    background-color: #e6eff8;
+    color: var(--ts-azul-oscuro);
+}
+
+/* ---------- Tabla de liquidación ---------- */
+
+.tabla-liquidacion {
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+}
+
+.tabla-liquidacion td {
+    padding: .375rem 0;
+}
+
+.tabla-liquidacion td:last-child {
+    text-align: right;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tabla-liquidacion tr.total td {
+    border-top: 1px solid var(--ts-linea);
+    padding-top: .625rem;
+    font-weight: 700;
+}
+
+.cuadre-ok {
+    color: #1b6b34;
+    font-weight: 600;
+}
+
+.cuadre-error {
+    color: #a1262e;
+    font-weight: 600;
+}
+
+/* ---------- Evidencias de una disputa ---------- */
+
+.evidencia {
+    padding: .75rem 0;
+    border-bottom: 1px solid var(--ts-linea);
+}
+
+.evidencia:last-child {
+    border-bottom: 0;
+}
+
+.evidencia .autor {
+    font-weight: 600;
+}
+
+.evidencia .cuando {
+    color: var(--ts-texto-secundario);
+    font-size: .8125rem;
+}
+
+/* Opciones de decisión del mediador */
+.opcion-decision {
+    display: block;
+    padding: .75rem 1rem;
+    border: 1px solid #c3ccd6;
+    border-radius: .5rem;
+    cursor: pointer;
+}
+
+.opcion-decision:has(input:checked) {
+    border-color: var(--ts-azul);
+    background-color: #f2f7fc;
+}
+
+/* ---------- Notificaciones ---------- */
+
+.lista-notificaciones {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.lista-notificaciones li {
+    display: flex;
+    gap: .75rem;
+    padding: .875rem 0;
+    border-bottom: 1px solid var(--ts-linea);
+}
+
+.lista-notificaciones li:last-child {
+    border-bottom: 0;
+}
+
+.punto-no-leida {
+    flex: none;
+    width: .5rem;
+    height: .5rem;
+    margin-top: .5rem;
+    border-radius: 999px;
+    background-color: var(--ts-azul);
+}
+
+.lista-notificaciones li.leida .punto-no-leida {
+    background-color: transparent;
+}
+
+.lista-notificaciones li.leida {
+    color: var(--ts-texto-secundario);
+}
+
+/* ---------- Resumen de finanzas ---------- */
+
+.resumen-finanzas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1rem 1.5rem;
+    margin: 0;
+}
+
+.resumen-finanzas dt {
+    color: var(--ts-texto-secundario);
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.resumen-finanzas dd {
+    margin: .125rem 0 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ts-azul-oscuro);
+    font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Finanzas')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('finanzas')}"></nav>
+
+<main class="container py-4">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <div class="encabezado-pagina">
+        <div>
+            <h1 class="titulo mb-0">Finanzas</h1>
+            <p class="subtitulo mb-0">
+                Contabilidad de la custodia ·
+                <span th:text="${stripeActivo} ? 'Stripe en modo de prueba' : 'Pagos simulados (Stripe no configurado)'">Pagos simulados</span>
+            </p>
+        </div>
+        <!-- Los plazos se revisan solos a las 6:00; este botón adelanta la revisión -->
+        <form th:action="@{/finanzas/plazos}" method="post">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-calendar-check" aria-hidden="true"></i>Revisar plazos vencidos ahora
+            </button>
+        </form>
+    </div>
+
+    <section class="card mb-4" aria-labelledby="titulo-resumen">
+        <div class="card-body p-4">
+            <h2 id="titulo-resumen" class="ficha-titulo">Resumen al <span th:text="${#temporals.format(hoy, 'dd/MM/yyyy')}">01/10/2026</span></h2>
+            <dl class="resumen-finanzas">
+                <div><dt>En custodia ahora</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(enCustodia, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
+                <div><dt>Retenido en total</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(retenido, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
+                <div><dt>Liberado a vendedores</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(liberado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
+                <div><dt>Reembolsado a compradores</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(reembolsado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
+                <div><dt>Comisiones (3 %)</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(comisiones, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
+            </dl>
+            <p class="small text-muted mt-3 mb-0">
+                Regla de cuadre global: retenido = en custodia + liberado + reembolsado + comisiones
+                (<span class="numero" th:text="'$ ' + ${#numbers.formatDecimal(retenido, 1, 'POINT', 2, 'COMMA')}"></span> =
+                <span class="numero" th:text="'$ ' + ${#numbers.formatDecimal(enCustodia + liberado + reembolsado + comisiones, 1, 'POINT', 2, 'COMMA')}"></span>)
+                <span th:class="${retenido.compareTo(enCustodia + liberado + reembolsado + comisiones) == 0} ? 'cuadre-ok' : 'cuadre-error'"
+                      th:text="${retenido.compareTo(enCustodia + liberado + reembolsado + comisiones) == 0} ? '· Cuadra' : '· No cuadra'">· Cuadra</span>
+            </p>
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <section class="col-lg-4" aria-labelledby="titulo-estados">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h2 id="titulo-estados" class="ficha-titulo">Tratos por estado</h2>
+                    <dl class="datos">
+                        <th:block th:each="par : ${porEstado}">
+                            <dt><span th:replace="~{fragmentos/base :: estado(${par.key})}"></span></dt>
+                            <dd class="numero fw-semibold" th:text="${par.value}">0</dd>
+                        </th:block>
+                    </dl>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-8" aria-labelledby="titulo-movimientos">
+            <div class="card card-listado">
+                <div class="card-body p-4">
+                    <h2 id="titulo-movimientos" class="ficha-titulo">Últimos movimientos</h2>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0 tabla-tarjetas">
+                            <thead>
+                            <tr><th>Trato</th><th>Tipo</th><th class="text-end">Monto</th><th>Fecha</th></tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="m : ${movimientos}">
+                                <td class="celda-principal">
+                                    <a th:href="@{/transacciones/{id}(id=${m.transaccion.id})}" th:text="${m.transaccion.producto}">Producto</a>
+                                </td>
+                                <td data-label="Tipo" th:text="${m.tipo.descripcion}">Retención</td>
+                                <td data-label="Monto" class="text-end"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
+                                <td data-label="Fecha" class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(movimientos)}">
+                                <td colspan="4" class="celda-vacia lista-vacia">Todavía no hay movimientos.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+</body>
+</html>
