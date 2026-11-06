@@ -1,7 +1,8 @@
 # Base de datos de TratoSeguro EC
 
-En el servidor (Render) la base es **PostgreSQL 18** (`tratoseguro-db`). En local se usa H2 con las mismas tablas.
-Las tablas no se escriben a mano: **JPA/Hibernate las crea a partir de las entidades Java** (`ddl-auto=update`).
+En el servidor (Render) la base es **PostgreSQL 18** (`tratoseguro-db`); en local y en las pruebas se usa H2 con
+el mismo esquema. Las tablas las crea **Flyway** con el script `src/main/resources/db/migration/V1__esquema_core.sql`;
+Hibernate solo valida que las entidades Java coincidan (`ddl-auto=validate`).
 
 ## Diagrama entidad-relación
 
@@ -9,69 +10,132 @@ Las tablas no se escriben a mano: **JPA/Hibernate las crea a partir de las entid
 erDiagram
     PROVINCIA ||--o{ CIUDAD : "tiene"
     CIUDAD ||--o{ USUARIO : "vive en"
+    USUARIO ||--o{ TRANSACCION : "vende (id_vendedor)"
+    USUARIO ||--o{ TRANSACCION : "compra (id_comprador)"
+    TRANSACCION ||--o| ENVIO : "se envía"
+    TRANSACCION ||--o{ MOVIMIENTO : "mueve dinero"
+    TRANSACCION ||--o{ HISTORIAL : "cambia de estado"
+    TRANSACCION ||--o| DISPUTA : "puede tener"
+    DISPUTA ||--o{ EVIDENCIA : "reúne"
+    USUARIO ||--o{ EVIDENCIA : "aporta"
+    USUARIO ||--o{ DISPUTA : "resuelve (mediador)"
+    USUARIO ||--o{ HISTORIAL : "hace el cambio"
+    USUARIO ||--o{ NOTIFICACION : "recibe"
+    TRANSACCION ||--o{ NOTIFICACION : "genera"
 
-    PROVINCIA {
-        bigint id PK
-        varchar(2) codigo UK "01 a 24, igual a la cédula"
-        varchar(60) nombre
-    }
-    CIUDAD {
-        bigint id PK
-        varchar(80) nombre
-        bigint id_provincia FK "-> provincia.id"
-    }
     USUARIO {
         bigint id PK
-        varchar(50) username UK
-        varchar(100) email
-        varchar(255) password "hash BCrypt"
-        varchar(100) nombre
-        varchar(10) cedula UK "validada con módulo 10"
-        varchar(30) rol "COMPRADOR, VENDEDOR, MEDIADOR, FINANZAS, ADMIN"
-        bigint id_ciudad FK "-> ciudad.id"
+        varchar username UK
+        varchar cedula UK "validada con módulo 10"
+        varchar password "hash BCrypt"
+        varchar rol "CHECK: 5 roles"
+        bigint id_ciudad FK
     }
     TRANSACCION {
         bigint id PK
-        varchar(150) producto
-        varchar(255) descripcion
-        numeric monto "BigDecimal, 2 decimales"
-        varchar(100) vendedor
-        varchar(100) email_comprador
-        int dias_entrega "1 a 30"
-        varchar(30) estado "CREADA, PAGADA, ..."
-        timestamp fecha_creacion
+        bigint id_vendedor FK
+        bigint id_comprador FK
+        numeric monto "1 a 10000"
+        varchar estado "CHECK: 7 estados"
+        date fecha_limite_envio
+        date fecha_limite_revision
+        numeric reembolso
+        numeric comision
+        numeric monto_vendedor
+        varchar metodo_pago "SIMULADO o STRIPE"
+        bigint version "bloqueo optimista"
+    }
+    MOVIMIENTO {
+        bigint id PK
+        bigint id_transaccion FK
+        varchar tipo "RETENCION, LIBERACION, COMISION, REEMBOLSO"
+        numeric monto
+        varchar referencia "id de Stripe o SIMULADO"
+    }
+    HISTORIAL {
+        bigint id PK
+        bigint id_transaccion FK
+        bigint id_usuario FK "vacío = sistema"
+        varchar estado_ant
+        varchar estado_nuevo
+        varchar motivo
+    }
+    DISPUTA {
+        bigint id PK
+        bigint id_transaccion FK "único"
+        bigint id_mediador FK
+        varchar decision
+        numeric reembolso
+        boolean via_rapida
+    }
+    EVIDENCIA {
+        bigint id PK
+        bigint id_disputa FK
+        bigint id_usuario FK
+        varchar descripcion
+        varchar archivo "enlace"
+    }
+    ENVIO {
+        bigint id PK
+        bigint id_transaccion FK "único"
+        varchar transportista
+        varchar guia
+    }
+    NOTIFICACION {
+        bigint id PK
+        bigint id_usuario FK
+        bigint id_transaccion FK
+        varchar mensaje
+        boolean leida
+    }
+    FERIADO {
+        bigint id PK
+        date fecha UK
+        varchar nombre
     }
 ```
 
 ## Claves foráneas
 
-| Tabla | Columna | Apunta a | Qué significa | En Java |
-|---|---|---|---|---|
-| `ciudad` | `id_provincia` | `provincia.id` | Cada ciudad pertenece a una provincia (1 provincia → N ciudades) | `@ManyToOne` + `@JoinColumn(name = "id_provincia")` en `Ciudad` |
-| `usuario` | `id_ciudad` | `ciudad.id` | Cada usuario vive en una ciudad (1 ciudad → N usuarios) | `@ManyToOne` + `@JoinColumn(name = "id_ciudad")` en `Usuario` |
+| Restricción | Tabla.columna | Apunta a | Significado |
+|---|---|---|---|
+| `fk_ciudad_provincia` | `ciudad.id_provincia` | `provincia.id` | Cada ciudad pertenece a una provincia |
+| `fk_usuario_ciudad` | `usuario.id_ciudad` | `ciudad.id` | Ciudad donde vive el usuario |
+| `fk_transaccion_vendedor` | `transaccion.id_vendedor` | `usuario.id` | Quién vende |
+| `fk_transaccion_comprador` | `transaccion.id_comprador` | `usuario.id` | Quién compra |
+| `fk_envio_transaccion` | `envio.id_transaccion` (único) | `transaccion.id` | Un trato tiene 0 o 1 envío |
+| `fk_movimiento_transaccion` | `movimiento.id_transaccion` | `transaccion.id` | Movimientos de dinero del trato |
+| `fk_historial_transaccion` | `historial.id_transaccion` | `transaccion.id` | Expediente del trato |
+| `fk_historial_usuario` | `historial.id_usuario` | `usuario.id` | Quién hizo el cambio (vacío = sistema) |
+| `fk_disputa_transaccion` | `disputa.id_transaccion` (único) | `transaccion.id` | Un trato tiene 0 o 1 disputa |
+| `fk_disputa_mediador` | `disputa.id_mediador` | `usuario.id` | Mediador que la resolvió |
+| `fk_evidencia_disputa` | `evidencia.id_disputa` | `disputa.id` | Evidencias de la disputa |
+| `fk_evidencia_usuario` | `evidencia.id_usuario` | `usuario.id` | Quién aportó la evidencia |
+| `fk_notificacion_usuario` | `notificacion.id_usuario` | `usuario.id` | Destinatario |
+| `fk_notificacion_transaccion` | `notificacion.id_transaccion` | `transaccion.id` | Trato que la generó |
 
-Hibernate les pone un nombre automático a las restricciones (por ejemplo `fkkedh5so3ts9ll01l1mlp796ea`); lo que
-importa es la columna y la tabla a la que apuntan.
+## Restricciones de la propia base (última barrera)
 
-**La base también protege las relaciones**, no solo la aplicación:
-
-- Insertar un usuario con `id_ciudad = 99999` da *ERROR: violates foreign key constraint*.
-- Borrar una provincia que tiene ciudades da *ERROR: ... is still referenced from table "ciudad"*.
+| Restricción | Qué impide |
+|---|---|
+| `ck_transaccion_estado` | Un estado que no sea uno de los 7 del core |
+| `ck_transaccion_monto` | Montos fuera de $ 1 a $ 10.000 |
+| `ck_transaccion_dias` | Días de entrega fuera de 1 a 30 |
+| `ck_transaccion_partes` | Que el vendedor y el comprador sean la misma persona |
+| `ck_movimiento_tipo`, `ck_movimiento_monto` | Tipos desconocidos o montos negativos |
+| `ck_usuario_rol` | Un rol que no exista |
+| `uk_usuario_cedula`, `uk_usuario_username` | Cédulas o usuarios repetidos |
+| `uk_envio_transaccion`, `uk_disputa_transaccion` | Dos envíos o dos disputas para el mismo trato |
 
 ## Cómo se guarda cada dato
 
 | Dato | Cómo se guarda | Por qué |
 |---|---|---|
-| Ids | `bigint` autonumérico (`generated by default as identity`) | `@GeneratedValue(strategy = IDENTITY)` |
-| Contraseña | Hash **BCrypt** (`$2a$10$...`), nunca el texto original | `passwordEncoder.encode(...)` en `UsuarioService` |
-| Cédula | Texto de 10 caracteres, **única** | Se valida con módulo 10 en el servidor antes de guardar |
-| Usuario (username) | Texto, **único** | No pueden existir dos cuentas iguales |
-| Rol / estado | Texto con una restricción `CHECK` que solo acepta los valores del enum | `@Enumerated(EnumType.STRING)` |
-| Ciudad del usuario | Solo el **número** de la ciudad (`id_ciudad`), no su nombre | Normalización: el nombre se obtiene con un `JOIN` |
-| Monto | `numeric` con 2 decimales | `BigDecimal` en Java; nunca `double` para dinero |
+| Contraseña | Hash **BCrypt** (`$2a$10$...`) | Nunca se guarda el texto original |
+| Vendedor y comprador | Solo el **id** del usuario | Normalización: el nombre se obtiene con un `JOIN` |
+| Dinero | `NUMERIC(10,2)` ↔ `BigDecimal` | Nunca `double` para dinero |
+| Estado, rol, tipo | Texto con `CHECK` | Legible en la base y validado por ella |
+| Plazos | `DATE` | Se calculan en días hábiles en el servidor |
+| Versión | `BIGINT` | `@Version`: evita liquidar el mismo dinero dos veces |
 
-## Consultas para revisar la base
-
-Las consultas listas para DBeaver están en [`consultas.sql`](consultas.sql): tablas, claves foráneas, cómo se
-guarda un usuario, el `JOIN` usuario → ciudad → provincia, ciudades por provincia y dos pruebas que la base
-rechaza (ciudad inexistente y borrar una provincia con ciudades).
+Consultas listas para DBeaver: [`consultas.sql`](consultas.sql).

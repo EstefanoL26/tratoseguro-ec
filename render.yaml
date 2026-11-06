@@ -9,6 +9,12 @@ services:
       # Contraseña del usuario admin que se crea la primera vez (se escribe en el panel de Render)
       - key: ADMIN_PASSWORD
         sync: false
+      # Stripe en modo de prueba (opcional). Sin estas claves la app usa el pago simulado.
+      # Solo se aceptan claves de prueba (sk_test_...). Se escriben en el panel de Render, nunca en el código.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
       # Activa application-prod.properties (PostgreSQL en lugar de H2)
       - key: SPRING_PROFILES_ACTIVE
         value: prod
