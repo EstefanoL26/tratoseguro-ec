@@ -700,6 +700,7 @@ h1, h2, h3, .titulo {
 @media (min-width: 1200px) {
     .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .kpis-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .kpis-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* En el celular: dos por fila, sin ícono, y la destacada ocupa toda la fila */
@@ -2380,4 +2381,245 @@ h1, h2, h3, .titulo {
 @media (prefers-reduced-motion: reduce) {
     .t-toast { transition: opacity 150ms ease-out !important; transform: none !important; filter: none !important; }
     .t-input { animation: none !important; transform: none !important; }
+}
+/* =========================================================
+   21. Reputación, archivos de evidencia, cobros y gráficos
+   (funciones de Stripe Connect, calificaciones y comprobantes)
+   ========================================================= */
+
+/* ---------- Estrellas y reputación ---------- */
+
+.estrellas {
+    display: inline-flex;
+    gap: .125rem;
+    color: #b7791f; /* ámbar oscuro: 3.6:1 sobre blanco; el relleno también distingue sin color */
+    font-size: .9375rem;
+    vertical-align: -.1em;
+}
+
+.reputacion {
+    line-height: 1.5;
+}
+
+.persona + .reputacion {
+    margin-top: .875rem;
+}
+
+.reputacion-linea {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem .5rem;
+}
+
+.reputacion-pie {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .5rem;
+    margin-top: .375rem;
+    font-size: .8125rem;
+    color: var(--ts-texto-secundario);
+}
+
+.reputacion-pie a {
+    font-weight: 600;
+    margin-left: auto;
+}
+
+/* Vendedor con su reputación en el resumen del pago */
+.vendedor-resumen {
+    padding: 1rem;
+    border-radius: var(--ts-radio-chico);
+    background-color: #f8fafc;
+    border: 1px solid var(--ts-linea-suave);
+}
+
+/* Calificación ya registrada y opiniones del perfil */
+.calificacion-cita {
+    margin: .5rem 0 .25rem;
+    color: var(--ts-tinta);
+}
+
+.opiniones {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.opinion {
+    display: flex;
+    gap: .875rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--ts-linea-suave);
+}
+
+.opinion:first-child { padding-top: 0; }
+.opinion:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.avatar-xl {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.125rem;
+}
+
+/* Selector de 1 a 5 estrellas con radios accesibles (se puede usar con teclado) */
+.entrada-estrellas {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: .25rem;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.entrada-estrellas input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.entrada-estrellas label {
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--ts-borde-campo);
+    cursor: pointer;
+    padding: .125rem;
+    border-radius: .5rem;
+}
+
+.entrada-estrellas label .bi-star-fill { display: none; }
+
+/* Se rellenan la estrella marcada y las anteriores (por el orden invertido, son las siguientes en el DOM) */
+.entrada-estrellas input:checked ~ label,
+.entrada-estrellas label:hover,
+.entrada-estrellas label:hover ~ label {
+    color: #b7791f;
+}
+
+.entrada-estrellas input:checked ~ label .bi-star-fill,
+.entrada-estrellas label:hover .bi-star-fill,
+.entrada-estrellas label:hover ~ label .bi-star-fill { display: inline; }
+
+.entrada-estrellas input:checked ~ label .bi-star,
+.entrada-estrellas label:hover .bi-star,
+.entrada-estrellas label:hover ~ label .bi-star { display: none; }
+
+.entrada-estrellas input:focus-visible + label {
+    outline: 2px solid var(--ts-azul);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .entrada-estrellas label {
+        transition: color var(--duration-quick) ease-out, transform var(--duration-quick) var(--ease-smooth-out);
+    }
+
+    .entrada-estrellas label:active {
+        transform: scale(0.9);
+    }
+}
+
+/* ---------- Archivos de evidencia ---------- */
+
+.archivo-evidencia {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-top: .625rem;
+    padding: .5rem;
+    border: 1px solid var(--ts-linea);
+    border-radius: var(--ts-radio-chico);
+    background-color: #fff;
+    max-width: 28rem;
+}
+
+.archivo-evidencia img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: .5rem;
+    flex-shrink: 0;
+}
+
+.archivo-evidencia .icono-pdf {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: .5rem;
+    background-color: var(--ts-rojo-50);
+    color: var(--ts-rojo-texto);
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.archivo-evidencia .huella {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .6875rem;
+    color: var(--ts-texto-secundario);
+    word-break: break-all;
+}
+
+.min-w-0 {
+    min-width: 0;
+}
+
+/* ---------- Comprobante y cobros ---------- */
+
+/* Códigos de verificación y cuentas: monoespaciada porque son datos que se copian */
+.codigo-verificacion {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--ts-azul-oscuro);
+}
+
+.small .codigo-verificacion {
+    display: inline;
+}
+
+.comprobante {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .875rem;
+    margin-top: 1.25rem;
+    padding: 1rem;
+    border-radius: var(--ts-radio-chico);
+    background-color: #f8fafc;
+    border: 1px solid var(--ts-linea-suave);
+}
+
+.comprobante .opcion-icono {
+    background-color: var(--ts-rojo-50);
+    color: var(--ts-rojo-texto);
+}
+
+.estado-cuenta {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.icono-verde { background-color: var(--ts-verde-50); color: var(--ts-verde-texto); }
+.icono-ambar { background-color: var(--ts-ambar-50); color: #a76400; }
+
+/* ---------- Gráficos de finanzas ---------- */
+
+.grafico {
+    position: relative;
+    height: 280px;
+}
+
+@media (max-width: 575.98px) {
+    .grafico {
+        height: 240px;
+    }
+
+    .kpis-3 .kpi-valor {
+        font-size: 1rem;
+    }
 }

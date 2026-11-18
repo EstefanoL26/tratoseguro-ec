@@ -367,6 +367,16 @@
                                 <i class="bi" th:classappend="${(t.reembolso + t.comision + t.montoVendedor).compareTo(t.monto) == 0} ? 'bi-check-circle-fill' : 'bi-x-circle-fill'" aria-hidden="true"></i>
                                 <span th:text="${(t.reembolso + t.comision + t.montoVendedor).compareTo(t.monto) == 0} ? 'Cuadra con el monto retenido' : 'No cuadra'">Cuadra</span>
                             </p>
+                            <div class="comprobante">
+                                <span class="opcion-icono"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i></span>
+                                <div class="me-auto">
+                                    <span class="ficha-etiqueta">Código de verificación</span>
+                                    <span class="codigo-verificacion" th:text="${codigoVerificacion}">A1B2-C3D4-E5F6-0789</span>
+                                </div>
+                                <a th:href="@{/transacciones/{id}/comprobante.pdf(id=${t.id})}" class="btn btn-outline-primary" target="_blank" rel="noopener">
+                                    <i class="bi bi-download" aria-hidden="true"></i>Comprobante PDF
+                                </a>
+                            </div>
                         </div>
 
                         <div class="panel-cuerpo" th:if="${#lists.isEmpty(movimientos)}">
@@ -389,7 +399,13 @@
                                         <td class="celda-principal fw-semibold" th:text="${m.tipo.descripcion}">Retención</td>
                                         <td data-label="Monto" class="text-end fw-bold"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
                                         <td data-label="Fecha" class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
-                                        <td data-label="Referencia" class="small text-muted text-break numero" th:text="${m.referencia ?: '—'}">SIMULADO</td>
+                                        <td data-label="Referencia" class="small text-break numero">
+                                            <span th:if="${m.transferenciaPendiente}" class="etiqueta etiqueta-ambar" title="El vendedor todavía no conecta su cuenta de cobro en Stripe">Transferencia pendiente</span>
+                                            <span th:if="${!m.transferenciaPendiente and m.referencia != null and #strings.startsWith(m.referencia, 'tr_')}" class="etiqueta etiqueta-verde">
+                                                <i class="bi bi-arrow-right-circle" aria-hidden="true"></i><span th:text="${m.referencia}">tr_123</span></span>
+                                            <span th:unless="${m.transferenciaPendiente or (m.referencia != null and #strings.startsWith(m.referencia, 'tr_'))}"
+                                                  class="text-muted" th:text="${m.referencia ?: '—'}">SIMULADO</span>
+                                        </td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -418,23 +434,32 @@
                             </div>
                             <p th:text="${ev.descripcion}">Descripción</p>
                             <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow">
-                                <i class="bi bi-paperclip" aria-hidden="true"></i>Ver archivo
+                                <i class="bi bi-link-45deg" aria-hidden="true"></i>Ver enlace
                             </a>
+                            <th:block th:if="${archivos.get(ev.id) != null}"><div th:replace="~{fragmentos/base :: archivo(${archivos.get(ev.id)})}"></div></th:block>
                         </div>
 
                         <!-- Las partes pueden aportar más evidencia mientras la disputa siga abierta -->
                         <form th:if="${!disputa.resuelta and (esComprador or esVendedor)}"
-                              th:action="@{/transacciones/{id}/evidencia(id=${t.id})}" method="post" class="mt-4">
+                              th:action="@{/transacciones/{id}/evidencia(id=${t.id})}" method="post" enctype="multipart/form-data" class="mt-4">
                             <div class="mb-3">
                                 <label for="descripcion" class="form-label">Agregar evidencia *</label>
                                 <textarea id="descripcion" name="descripcion" rows="2" class="form-control" required maxlength="255"
                                           placeholder="Describe qué muestra la foto o el documento"></textarea>
                             </div>
-                            <div class="mb-3">
-                                <label for="enlace" class="form-label">Enlace al archivo (opcional)</label>
-                                <input type="url" id="enlace" name="enlace" class="form-control" maxlength="255"
-                                       placeholder="https://drive.google.com/..." aria-describedby="enlace-ayuda">
-                                <div id="enlace-ayuda" class="form-text">Sube la foto o el documento a Google Drive y pega aquí el enlace.</div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="archivo" class="form-label">Foto o PDF (opcional)</label>
+                                    <input type="file" id="archivo" name="archivo" class="form-control" data-max-mb="5"
+                                           accept="image/jpeg,image/png,image/webp,application/pdf" aria-describedby="archivo-ayuda">
+                                    <div id="archivo-ayuda" class="form-text">JPG, PNG, WebP o PDF de hasta 5 MB. Se guarda con su huella SHA-256 para probar que no se alteró.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="enlace" class="form-label">Enlace (opcional)</label>
+                                    <input type="url" id="enlace" name="enlace" class="form-control" maxlength="255"
+                                           placeholder="https://drive.google.com/..." aria-describedby="enlace-ayuda">
+                                    <div id="enlace-ayuda" class="form-text">Para videos o archivos grandes: súbelos a Google Drive y pega aquí el enlace.</div>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i>Agregar evidencia</button>
                         </form>
@@ -451,10 +476,55 @@
                     </div>
                 </div>
             </section>
+
+            <!-- ---------- Calificación del vendedor (el comprador, al cerrar el trato) ---------- -->
+            <section class="panel" th:if="${calificacion != null or puedeCalificar}" aria-labelledby="titulo-calificacion">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-calificacion" class="panel-titulo">Calificación del vendedor</h2>
+                </div>
+                <div class="panel-cuerpo">
+                    <div th:if="${calificacion != null}" class="calificacion">
+                        <div class="reputacion-linea">
+                            <span th:replace="~{fragmentos/base :: estrellas(${calificacion.puntaje}, ${calificacion.puntaje + ' de 5 estrellas'})}"></span>
+                            <span class="fw-bold" th:text="${calificacion.puntaje} + ' de 5'">5 de 5</span>
+                        </div>
+                        <p class="calificacion-cita" th:if="${calificacion.comentario}" th:text="'«' + ${calificacion.comentario} + '»'">Comentario</p>
+                        <p class="actividad-cuando mb-0" th:text="${calificacion.comprador.nombre} + ' · ' + ${#temporals.format(calificacion.fecha, 'dd/MM/yyyy')}">Ana Torres · 01/10/2026</p>
+                    </div>
+                    <form th:if="${calificacion == null and puedeCalificar}" th:action="@{/transacciones/{id}/calificar(id=${t.id})}" method="post">
+                        <p class="mb-2">¿Cómo te fue con <strong th:text="${t.vendedor.nombre}">Carlos Mena</strong>? Otros compradores verán tu calificación antes de pagar.</p>
+                        <fieldset class="entrada-estrellas mb-3">
+                            <legend class="visually-hidden">Escoge de 1 a 5 estrellas</legend>
+                            <th:block th:each="n : ${#numbers.sequence(5, 1, -1)}">
+                                <input type="radio" name="puntaje" th:id="'estrella' + ${n}" th:value="${n}" required>
+                                <label th:for="'estrella' + ${n}" th:title="${n} + (${n == 1} ? ' estrella' : ' estrellas')">
+                                    <i class="bi bi-star" aria-hidden="true"></i><i class="bi bi-star-fill" aria-hidden="true"></i>
+                                    <span class="visually-hidden" th:text="${n} + (${n == 1} ? ' estrella' : ' estrellas')">5 estrellas</span>
+                                </label>
+                            </th:block>
+                        </fieldset>
+                        <div class="mb-3">
+                            <label for="comentario" class="form-label">Comentario (opcional)</label>
+                            <textarea id="comentario" name="comentario" rows="2" class="form-control" maxlength="300"
+                                      placeholder="Cuéntales a otros compradores cómo llegó el producto"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-star" aria-hidden="true"></i>Calificar</button>
+                    </form>
+                </div>
+            </section>
         </div>
 
-        <!-- ================= Historial (expediente) ================= -->
+        <!-- ================= Reputación del vendedor e historial (expediente) ================= -->
         <aside class="col-xl-4">
+            <section class="panel mb-4" aria-labelledby="titulo-reputacion">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-reputacion" class="panel-titulo">Reputación del vendedor</h2>
+                </div>
+                <div class="panel-cuerpo">
+                    <span th:replace="~{fragmentos/base :: persona(${t.vendedor.nombre}, null)}"></span>
+                    <div class="mt-3" th:replace="~{fragmentos/base :: reputacion(${reputacion}, ${t.vendedor})}"></div>
+                </div>
+            </section>
             <section class="panel" aria-labelledby="titulo-historial">
                 <div class="panel-cabecera">
                     <h2 id="titulo-historial" class="panel-titulo">Historial</h2>

@@ -64,6 +64,12 @@
                         <i class="bi bi-plus-circle" aria-hidden="true"></i>Nuevo trato
                     </a>
                 </li>
+                <li th:if="${esVendedorActual}">
+                    <a class="lateral-enlace" th:classappend="${activo == 'cobros'} ? 'activo'"
+                       th:attr="aria-current=${activo == 'cobros'} ? 'page' : null" th:href="@{/cuenta/cobros}">
+                        <i class="bi bi-wallet2" aria-hidden="true"></i>Mis cobros
+                    </a>
+                </li>
                 <li>
                     <a class="lateral-enlace" th:classappend="${activo == 'notificaciones'} ? 'activo'"
                        th:attr="aria-current=${activo == 'notificaciones'} ? 'page' : null" th:href="@{/notificaciones}">
@@ -151,6 +157,48 @@
 <!-- Etiqueta de estado del trato: cada estado tiene su color (estilos.css) y siempre su nombre -->
 <span th:fragment="estado(e)" class="estado" th:classappend="'estado-' + ${#strings.toLowerCase(e.name())}"
       th:text="${e.descripcion}">Creada</span>
+
+<!-- Estrellas de 1 a 5 (llenas = valor). El texto alternativo dice la cifra exacta. -->
+<span th:fragment="estrellas(valor, texto)" class="estrellas" role="img" th:attr="aria-label=${texto}">
+    <i th:each="n : ${#numbers.sequence(1, 5)}" class="bi" th:classappend="${n <= valor} ? 'bi-star-fill' : 'bi-star'" aria-hidden="true"></i>
+</span>
+
+<!-- Resumen de la reputación de un vendedor: estrellas, promedio y tratos cerrados sin disputa -->
+<div th:fragment="reputacion(rep, vendedor)" class="reputacion">
+    <div class="reputacion-linea">
+        <th:block th:if="${rep.sinCalificaciones}">
+            <span class="text-muted">Sin calificaciones todavía</span>
+        </th:block>
+        <th:block th:unless="${rep.sinCalificaciones}">
+            <span th:replace="~{fragmentos/base :: estrellas(${rep.estrellasLlenas}, ${'Promedio ' + rep.promedio + ' de 5'})}"></span>
+            <strong class="numero" th:text="${#numbers.formatDecimal(rep.promedio, 1, 1, 'COMMA')}">4,5</strong>
+            <span class="text-muted" th:text="'(' + ${rep.calificaciones} + (${rep.calificaciones == 1} ? ' calificación)' : ' calificaciones)')">(3 calificaciones)</span>
+        </th:block>
+    </div>
+    <div class="reputacion-pie">
+        <span th:text="${rep.tratosCerrados} + (${rep.tratosCerrados == 1} ? ' trato cerrado' : ' tratos cerrados')">4 tratos cerrados</span>
+        <span th:if="${rep.porcentajeSinDisputa != null}" th:text="'· ' + ${rep.porcentajeSinDisputa} + ' % sin disputa'">· 75 % sin disputa</span>
+        <a th:href="@{/vendedores/{id}(id=${vendedor.id})}">Ver perfil</a>
+    </div>
+</div>
+
+<!-- Archivo adjunto a una evidencia: miniatura (foto) o ícono (PDF), tamaño y huella SHA-256 -->
+<div th:fragment="archivo(info)" class="archivo-evidencia">
+    <a th:href="@{/evidencias/{id}/archivo(id=${info.evidenciaId})}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">
+        <img th:if="${info.imagen}" th:src="@{/evidencias/{id}/archivo(id=${info.evidenciaId})}" alt="" loading="lazy" width="64" height="64">
+        <i th:unless="${info.imagen}" class="bi bi-file-earmark-pdf icono-pdf"></i>
+    </a>
+    <div class="min-w-0">
+        <a th:href="@{/evidencias/{id}/archivo(id=${info.evidenciaId})}" target="_blank" rel="noopener"
+           class="fw-semibold text-break" th:text="${info.nombre}">foto-paquete.jpg</a>
+        <div class="small text-muted">
+            <span th:text="${info.imagen} ? 'Foto' : 'PDF'">Foto</span> · <span th:text="${info.tamanoLegible}">850 KB</span> ·
+            <a th:href="@{/evidencias/{id}/archivo(id=${info.evidenciaId}, descargar=true)}">Descargar</a>
+        </div>
+        <div class="huella" th:title="'Huella SHA-256 completa: ' + ${info.sha256}"
+             th:text="'SHA-256 ' + ${#strings.substring(info.sha256, 0, 16)} + '…'">SHA-256 3f9a…</div>
+    </div>
+</div>
 
 <!-- Dinero con formato ecuatoriano: $ 1.250,00 -->
 <span th:fragment="dinero(valor)" class="monto"

@@ -53,4 +53,17 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () { campoConError.classList.remove('is-shaking'); }, duracion + 20);
         campoConError.focus();
     }
+
+    // ---------- 3. Archivos de evidencia: aviso inmediato si pesa más de lo permitido ----------
+    // El servidor vuelve a validar el tamaño y el tipo real del archivo; esto solo ahorra la espera.
+    document.querySelectorAll('input[type="file"][data-max-mb]').forEach(function (campo) {
+        campo.addEventListener('change', function () {
+            const maximo = parseFloat(campo.dataset.maxMb) * 1024 * 1024;
+            const archivo = campo.files && campo.files[0];
+            campo.setCustomValidity(archivo && archivo.size > maximo
+                ? 'El archivo pesa más de ' + campo.dataset.maxMb + ' MB. Comprime la foto o divide el PDF.'
+                : '');
+            campo.reportValidity();
+        });
+    });
 });

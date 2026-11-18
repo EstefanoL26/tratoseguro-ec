@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head(${vendedor.nombre})}"></head>
+<body class="app">
+
+<th:block th:replace="~{fragmentos/base :: navbar('tratos')}"></th:block>
+
+<div class="contenido-envoltura">
+<main class="contenido">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <ol class="migas" aria-label="Ubicación">
+        <li><a th:href="@{/transacciones}">Tratos</a></li>
+        <li aria-current="page">Perfil del vendedor</li>
+    </ol>
+
+    <header class="cabecera-trato">
+        <div class="persona">
+            <span th:replace="~{fragmentos/base :: avatar(${vendedor.nombre}, 'avatar-xl')}"></span>
+            <div>
+                <h1 class="titulo" th:text="${vendedor.nombre}">Carlos Mena</h1>
+                <div class="cabecera-meta">
+                    <span><i class="bi bi-shop" aria-hidden="true"></i>Vendedor</span>
+                    <span th:if="${vendedor.ciudad}"><i class="bi bi-geo-alt" aria-hidden="true"></i><span
+                          th:text="${vendedor.ciudad.nombre} + ', ' + ${vendedor.ciudad.provincia.nombre}">Quito, Pichincha</span></span>
+                </div>
+            </div>
+        </div>
+        <div class="monto-protegido" th:unless="${reputacion.sinCalificaciones}">
+            <span class="monto-protegido-etiqueta"><i class="bi bi-star-fill" aria-hidden="true"></i>Calificación promedio</span>
+            <p class="monto-grande" th:text="${#numbers.formatDecimal(reputacion.promedio, 1, 1, 'COMMA')}">4,5</p>
+            <span th:replace="~{fragmentos/base :: estrellas(${reputacion.estrellasLlenas}, ${'Promedio ' + reputacion.promedio + ' de 5'})}"></span>
+        </div>
+    </header>
+
+    <section class="kpis" aria-label="Historial del vendedor">
+        <div class="kpi kpi-destacado">
+            <span class="kpi-icono"><i class="bi bi-star" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${reputacion.calificaciones}">3</span>
+                <span class="kpi-etiqueta" th:text="${reputacion.calificaciones == 1} ? 'Calificación' : 'Calificaciones'">Calificaciones</span>
+            </div>
+        </div>
+        <div class="kpi">
+            <span class="kpi-icono"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${reputacion.tratosCerrados}">4</span>
+                <span class="kpi-etiqueta">Tratos cerrados</span>
+            </div>
+        </div>
+        <div class="kpi kpi-verde">
+            <span class="kpi-icono"><i class="bi bi-shield-check" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${reputacion.porcentajeSinDisputa != null} ? ${reputacion.porcentajeSinDisputa} + ' %' : '—'">75 %</span>
+                <span class="kpi-etiqueta">Sin disputa</span>
+            </div>
+        </div>
+        <div class="kpi" th:classappend="${reputacion.tratosConDisputa > 0} ? 'kpi-rojo' : 'kpi-turquesa'">
+            <span class="kpi-icono"><i class="bi bi-shield-exclamation" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${reputacion.tratosConDisputa}">1</span>
+                <span class="kpi-etiqueta">Con disputa</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-opiniones">
+        <div class="panel-cabecera">
+            <h2 id="titulo-opiniones" class="panel-titulo">Opiniones de sus compradores <span class="cuenta" th:text="${#lists.size(calificaciones)}">2</span></h2>
+        </div>
+        <div class="panel-cuerpo">
+            <div th:if="${#lists.isEmpty(calificaciones)}" class="vacio py-3">
+                <i class="bi bi-chat-square-text" aria-hidden="true"></i>
+                <strong>Aún no hay opiniones</strong>
+                Los compradores califican al vendedor cuando se cierra el trato.
+            </div>
+            <ul class="opiniones" th:unless="${#lists.isEmpty(calificaciones)}">
+                <li th:each="c : ${calificaciones}" class="opinion">
+                    <span th:replace="~{fragmentos/base :: avatar(${c.comprador.nombre}, '')}"></span>
+                    <div>
+                        <div class="reputacion-linea">
+                            <strong th:text="${c.comprador.nombre}">Ana Torres</strong>
+                            <span th:replace="~{fragmentos/base :: estrellas(${c.puntaje}, ${c.puntaje + ' de 5 estrellas'})}"></span>
+                        </div>
+                        <p class="calificacion-cita" th:if="${c.comentario}" th:text="${c.comentario}">Comentario</p>
+                        <p class="actividad-cuando mb-0" th:text="${#temporals.format(c.fecha, 'dd/MM/yyyy')} + ' · ' + ${c.transaccion.producto}">01/10/2026 · Audífonos</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </section>
+</main>
+</div>
+
+</body>
+</html>

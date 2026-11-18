@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Mis cobros')}"></head>
+<body class="app">
+
+<th:block th:replace="~{fragmentos/base :: navbar('cobros')}"></th:block>
+
+<div class="contenido-envoltura">
+<main class="contenido">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <header class="cabecera">
+        <div>
+            <ol class="migas" aria-label="Ubicación">
+                <li><a th:href="@{/transacciones}">Inicio</a></li>
+                <li aria-current="page">Mis cobros</li>
+            </ol>
+            <h1 class="titulo">Mis cobros</h1>
+            <p class="subtitulo">Lo que TratoSeguro te ha liberado y cómo te llega el dinero.</p>
+        </div>
+    </header>
+
+    <section class="kpis kpis-tres" aria-label="Resumen de tus cobros">
+        <div class="kpi kpi-destacado">
+            <span class="kpi-icono"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="'$ ' + ${#numbers.formatDecimal(totalTransferido, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                <span class="kpi-etiqueta">Recibido</span>
+            </div>
+        </div>
+        <div class="kpi" th:classappend="${totalPendiente.signum() > 0} ? 'kpi-ambar' : 'kpi-verde'">
+            <span class="kpi-icono"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="'$ ' + ${#numbers.formatDecimal(totalPendiente, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                <span class="kpi-etiqueta">Pendiente de transferir</span>
+            </div>
+        </div>
+        <div class="kpi">
+            <span class="kpi-icono"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${#lists.size(liberaciones)}">0</span>
+                <span class="kpi-etiqueta">Liberaciones</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="row g-4 mb-4 align-items-start">
+        <!-- ---------- Cuenta de cobro en Stripe Connect ---------- -->
+        <section class="col-lg-7" aria-labelledby="titulo-cuenta">
+            <div class="panel">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-cuenta" class="panel-titulo">Cuenta de cobro</h2>
+                    <span class="etiqueta" th:classappend="${stripeActivo} ? 'etiqueta-azul' : 'etiqueta-ambar'"
+                          th:text="${stripeActivo} ? 'Stripe Connect · prueba' : 'Pagos simulados'">Pagos simulados</span>
+                </div>
+                <div class="panel-cuerpo">
+                    <!-- Sin Stripe: todo es simulado -->
+                    <div th:unless="${stripeActivo}" class="estado-cuenta">
+                        <span class="opcion-icono"><i class="bi bi-info-circle" aria-hidden="true"></i></span>
+                        <div>
+                            <p class="opcion-nombre mb-1">Pagos simulados</p>
+                            <p class="mb-0 text-muted">Este servidor no tiene Stripe configurado: las liberaciones se registran en la contabilidad interna y no necesitas conectar una cuenta.</p>
+                        </div>
+                    </div>
+
+                    <th:block th:if="${stripeActivo}">
+                        <!-- Activa -->
+                        <div th:if="${vendedor.stripeCobrosActivos}" class="estado-cuenta">
+                            <span class="opcion-icono icono-verde"><i class="bi bi-patch-check-fill" aria-hidden="true"></i></span>
+                            <div>
+                                <p class="opcion-nombre mb-1">Cuenta activa en Stripe (modo de prueba)</p>
+                                <p class="mb-2 text-muted">Cuando un comprador confirma la recepción, el neto (monto menos reembolso y 3 % de comisión) se transfiere automáticamente a tu cuenta.</p>
+                                <p class="small mb-0">Cuenta <span class="codigo-verificacion" th:text="${vendedor.stripeCuentaId}">acct_123</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Registro empezado pero sin terminar -->
+                        <div th:if="${vendedor.stripeCuentaId != null and !vendedor.stripeCobrosActivos}" class="estado-cuenta">
+                            <span class="opcion-icono icono-ambar"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+                            <div>
+                                <p class="opcion-nombre mb-1">Registro sin terminar</p>
+                                <p class="mb-3 text-muted">Stripe todavía no habilita las transferencias a tu cuenta. Termina el registro para recibir lo que se te libere.</p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <form th:action="@{/cuenta/cobros/conectar}" method="post">
+                                        <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>Continuar registro en Stripe</button>
+                                    </form>
+                                    <form th:action="@{/cuenta/cobros/actualizar}" method="post">
+                                        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Ya terminé, revisar</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sin cuenta -->
+                        <div th:if="${vendedor.stripeCuentaId == null}" class="estado-cuenta">
+                            <span class="opcion-icono"><i class="bi bi-bank" aria-hidden="true"></i></span>
+                            <div>
+                                <p class="opcion-nombre mb-1">Conecta tu cuenta de cobro</p>
+                                <p class="mb-3 text-muted">TratoSeguro usa <strong>Stripe Connect</strong> para pagarte: el comprador le paga a la plataforma, el dinero queda retenido y, al liberarse, se te transfiere el neto.</p>
+                                <div class="aviso aviso-prueba mb-3" role="note">
+                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                                    <div><strong>Modo de prueba.</strong> En el registro de Stripe usa los datos de prueba que ofrece el formulario
+                                        (por ejemplo, el código SMS <span class="numero">000-000</span> y la cuenta bancaria de prueba). No se mueve dinero real.</div>
+                                </div>
+                                <form th:action="@{/cuenta/cobros/conectar}" method="post">
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-link-45deg" aria-hidden="true"></i>Conectar con Stripe</button>
+                                </form>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---------- Reputación ---------- -->
+        <section class="col-lg-5" aria-labelledby="titulo-reputacion">
+            <div class="panel">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-reputacion" class="panel-titulo">Tu reputación</h2>
+                </div>
+                <div class="panel-cuerpo">
+                    <span th:replace="~{fragmentos/base :: persona(${vendedor.nombre}, 'Vendedor')}"></span>
+                    <div th:replace="~{fragmentos/base :: reputacion(${reputacion}, ${vendedor})}"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ---------- Liberaciones ---------- -->
+    <section class="panel" aria-labelledby="titulo-liberaciones">
+        <div class="panel-cabecera">
+            <h2 id="titulo-liberaciones" class="panel-titulo">Liberaciones <span class="cuenta" th:text="${#lists.size(liberaciones)}">0</span></h2>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover tabla tabla-tarjetas">
+                <thead><tr><th>Trato</th><th class="text-end">Neto</th><th>Fecha</th><th>Transferencia</th></tr></thead>
+                <tbody>
+                <tr th:each="m : ${liberaciones}">
+                    <td class="celda-principal"><a class="enlace-fila" th:href="@{/transacciones/{id}(id=${m.transaccion.id})}" th:text="${m.transaccion.producto}">Producto</a></td>
+                    <td data-label="Neto" class="text-end fw-bold"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
+                    <td data-label="Fecha" class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
+                    <td data-label="Transferencia" class="small text-break">
+                        <span th:if="${m.transferenciaPendiente}" class="etiqueta etiqueta-ambar">Pendiente</span>
+                        <span th:if="${!m.transferenciaPendiente and m.referencia != null and #strings.startsWith(m.referencia, 'tr_')}" class="etiqueta etiqueta-verde">
+                            <i class="bi bi-arrow-right-circle" aria-hidden="true"></i><span th:text="${m.referencia}">tr_123</span></span>
+                        <span th:unless="${m.transferenciaPendiente or (m.referencia != null and #strings.startsWith(m.referencia, 'tr_'))}" class="etiqueta">Simulada</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(liberaciones)}">
+                    <td colspan="4" class="celda-vacia">
+                        <div class="vacio">
+                            <i class="bi bi-wallet2" aria-hidden="true"></i>
+                            <strong>Todavía no se te ha liberado ningún pago</strong>
+                            Cuando un comprador confirme la recepción, el neto aparecerá aquí.
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</div>
+
+</body>
+</html>

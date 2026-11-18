@@ -5,6 +5,9 @@ import com.tratoseguro.model.EstadoTransaccion;
 import com.tratoseguro.model.Rol;
 import com.tratoseguro.model.Transaccion;
 import com.tratoseguro.model.Usuario;
+import com.tratoseguro.service.ArchivoEvidenciaService;
+import com.tratoseguro.service.CalificacionService;
+import com.tratoseguro.service.ComprobanteService;
 import com.tratoseguro.service.DisputaService;
 import com.tratoseguro.service.LiquidacionService;
 import com.tratoseguro.service.PagoService;
@@ -13,6 +16,10 @@ import com.tratoseguro.service.TransaccionService;
 import com.tratoseguro.service.UsuarioService;
 import com.tratoseguro.util.Reloj;
 import jakarta.validation.Valid;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -24,6 +31,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -49,15 +57,22 @@ public class TransaccionController {
     private final LiquidacionService liquidacionService;
     private final PagoService pagoService;
     private final UsuarioService usuarioService;
+    private final ArchivoEvidenciaService archivoEvidenciaService;
+    private final CalificacionService calificacionService;
+    private final ComprobanteService comprobanteService;
 
     public TransaccionController(TransaccionService transaccionService, DisputaService disputaService,
                                  LiquidacionService liquidacionService, PagoService pagoService,
-                                 UsuarioService usuarioService) {
+                                 UsuarioService usuarioService, ArchivoEvidenciaService archivoEvidenciaService,
+                                 CalificacionService calificacionService, ComprobanteService comprobanteService) {
         this.transaccionService = transaccionService;
         this.disputaService = disputaService;
         this.liquidacionService = liquidacionService;
         this.pagoService = pagoService;
         this.usuarioService = usuarioService;
+        this.archivoEvidenciaService = archivoEvidenciaService;
+        this.calificacionService = calificacionService;
+        this.comprobanteService = comprobanteService;
     }
 
     // ---------- Lista y detalle ----------
@@ -90,6 +105,12 @@ public class TransaccionController {
         model.addAttribute("movimientos", liquidacionService.movimientos(id));
         model.addAttribute("disputa", disputa);
         model.addAttribute("evidencias", disputa == null ? List.of() : disputaService.evidencias(disputa.getId()));
+        model.addAttribute("archivos", archivoEvidenciaService.deDisputa(disputa == null ? null : disputa.getId()));
+        // Reputación del vendedor, calificación del trato y código de verificación del comprobante
+        model.addAttribute("reputacion", calificacionService.reputacion(transaccion.getVendedor()));
+        model.addAttribute("calificacion", calificacionService.deTransaccion(id));
+        model.addAttribute("puedeCalificar", transaccion.esComprador(usuario) && calificacionService.puedeCalificarse(transaccion));
+        model.addAttribute("codigoVerificacion", ComprobanteService.codigoVerificacion(transaccion));
         model.addAttribute("transportistas", TRANSPORTISTAS);
         model.addAttribute("diasParaEnviar", diasHasta(transaccion.getFechaLimiteEnvio()));
         model.addAttribute("diasParaRevisar", diasHasta(transaccion.getFechaLimiteRevision()));
@@ -160,6 +181,7 @@ public class TransaccionController {
             return "redirect:/transacciones/" + id;
         }
         model.addAttribute("t", transaccion);
+        model.addAttribute("reputacion", calificacionService.reputacion(transaccion.getVendedor()));
         model.addAttribute("stripeActivo", pagoService.isStripeActivo());
         model.addAttribute("cancelado", cancelado != null);
         return "transacciones/pago";
@@ -232,8 +254,9 @@ public class TransaccionController {
     public String abrirDisputa(@PathVariable Long id, @RequestParam String motivo,
                                @RequestParam(required = false) String evidencia,
                                @RequestParam(required = false) String enlace,
+                               @RequestParam(required = false) MultipartFile archivo,
                                Authentication authentication, RedirectAttributes flash) {
-        disputaService.abrir(id, usuarioActual(authentication), motivo, evidencia, enlace);
+        disputaService.abrir(id, usuarioActual(authentication), motivo, evidencia, enlace, archivo);
         flash.addFlashAttribute("mensaje", "Disputa abierta. Un mediador revisará la evidencia; los plazos quedan pausados.");
         return "redirect:/transacciones/" + id;
     }
@@ -241,10 +264,35 @@ public class TransaccionController {
     @PostMapping("/{id}/evidencia")
     public String agregarEvidencia(@PathVariable Long id, @RequestParam String descripcion,
                                    @RequestParam(required = false) String enlace,
+                                   @RequestParam(required = false) MultipartFile archivo,
                                    Authentication authentication, RedirectAttributes flash) {
-        disputaService.agregarEvidencia(id, usuarioActual(authentication), descripcion, enlace);
+        disputaService.agregarEvidencia(id, usuarioActual(authentication), descripcion, enlace, archivo);
         flash.addFlashAttribute("mensaje", "Evidencia agregada a la disputa.");
         return "redirect:/transacciones/" + id;
+    }
+
+    // ---------- Calificación del vendedor (comprador, trato cerrado) ----------
+
+    @PostMapping("/{id}/calificar")
+    public String calificar(@PathVariable Long id, @RequestParam(required = false) Integer puntaje,
+                            @RequestParam(required = false) String comentario,
+                            Authentication authentication, RedirectAttributes flash) {
+        calificacionService.calificar(id, usuarioActual(authentication), puntaje, comentario);
+        flash.addFlashAttribute("mensaje", "Gracias por calificar al vendedor.");
+        return "redirect:/transacciones/" + id;
+    }
+
+    // ---------- Comprobante de liquidación en PDF ----------
+
+    @GetMapping("/{id}/comprobante.pdf")
+    public ResponseEntity<byte[]> comprobante(@PathVariable Long id, Authentication authentication) {
+        byte[] pdf = comprobanteService.generar(id, usuarioActual(authentication));
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.inline().filename("comprobante-trato-" + id + ".pdf").build().toString())
+                .header(HttpHeaders.CACHE_CONTROL, "private, no-store")
+                .body(pdf);
     }
 
     // ---------- Ayudantes ----------

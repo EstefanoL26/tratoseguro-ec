@@ -15,6 +15,7 @@ import com.tratoseguro.util.Reloj;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -33,25 +34,34 @@ public class DisputaService {
     private final LiquidacionService liquidacionService;
     private final NotificacionService notificacionService;
     private final PagoService pagoService;
+    private final ArchivoEvidenciaService archivoEvidenciaService;
 
     public DisputaService(DisputaRepository disputaRepository, EvidenciaRepository evidenciaRepository,
                           TransaccionService transaccionService, LiquidacionService liquidacionService,
-                          NotificacionService notificacionService, PagoService pagoService) {
+                          NotificacionService notificacionService, PagoService pagoService,
+                          ArchivoEvidenciaService archivoEvidenciaService) {
         this.disputaRepository = disputaRepository;
         this.evidenciaRepository = evidenciaRepository;
         this.transaccionService = transaccionService;
         this.liquidacionService = liquidacionService;
         this.notificacionService = notificacionService;
         this.pagoService = pagoService;
+        this.archivoEvidenciaService = archivoEvidenciaService;
     }
 
     // =====================================================================
     // Abrir disputa y aportar evidencia
     // =====================================================================
 
-    // PAGADA o ENVIADA -> EN_DISPUTA (solo el comprador). Los plazos quedan pausados.
     @Transactional
     public Disputa abrir(Long transaccionId, Usuario comprador, String motivo, String evidencia, String enlace) {
+        return abrir(transaccionId, comprador, motivo, evidencia, enlace, null);
+    }
+
+    // PAGADA o ENVIADA -> EN_DISPUTA (solo el comprador). Los plazos quedan pausados.
+    @Transactional
+    public Disputa abrir(Long transaccionId, Usuario comprador, String motivo, String evidencia, String enlace,
+                         MultipartFile archivo) {
         Transaccion transaccion = transaccionService.buscar(transaccionId);
         if (!transaccion.esComprador(comprador)) {
             throw new AccessDeniedException("Solo el comprador del trato puede abrir una disputa.");
@@ -60,20 +70,31 @@ public class DisputaService {
         if (motivoLimpio.length() < 10 || motivoLimpio.length() > 255) {
             throw new ReglaNegocioException("Explica el motivo de la disputa (entre 10 y 255 caracteres).");
         }
+        boolean hayEvidencia = !limpiar(evidencia).isEmpty();
+        if (!hayEvidencia && !ArchivoEvidenciaService.vacio(archivo)) {
+            throw new ReglaNegocioException("Describe la evidencia que adjuntas.");
+        }
+        // El archivo se valida antes de cambiar el estado: si no sirve, la disputa no se abre a medias
+        byte[] datos = ArchivoEvidenciaService.vacio(archivo) ? null : archivoEvidenciaService.validar(archivo, null);
 
         transaccionService.cambiarEstado(transaccion, EstadoTransaccion.EN_DISPUTA, comprador, "Disputa abierta: " + motivoLimpio);
         Disputa disputa = disputaRepository.save(new Disputa(transaccion, motivoLimpio, Reloj.ahora()));
-        if (!limpiar(evidencia).isEmpty()) {
-            guardarEvidencia(disputa, comprador, evidencia, enlace);
+        if (hayEvidencia) {
+            guardarEvidencia(disputa, comprador, evidencia, enlace, archivo, datos);
         }
         notificacionService.notificarMediadores(transaccion,
                 "Nueva disputa en \"" + transaccion.getProducto() + "\" (" + Dinero.formatear(transaccion.getMonto()) + "). Revisa la evidencia.");
         return disputa;
     }
 
-    // Comprador o vendedor, mientras la disputa no esté resuelta
     @Transactional
     public void agregarEvidencia(Long transaccionId, Usuario usuario, String descripcion, String enlace) {
+        agregarEvidencia(transaccionId, usuario, descripcion, enlace, null);
+    }
+
+    // Comprador o vendedor, mientras la disputa no esté resuelta
+    @Transactional
+    public void agregarEvidencia(Long transaccionId, Usuario usuario, String descripcion, String enlace, MultipartFile archivo) {
         Disputa disputa = disputaRepository.findByTransaccionId(transaccionId)
                 .orElseThrow(() -> new ReglaNegocioException("Este trato no tiene una disputa abierta."));
         if (!disputa.getTransaccion().participa(usuario)) {
@@ -82,12 +103,15 @@ public class DisputaService {
         if (disputa.isResuelta()) {
             throw new ReglaNegocioException("La disputa ya fue resuelta; no se puede agregar más evidencia.");
         }
-        guardarEvidencia(disputa, usuario, descripcion, enlace);
+        byte[] datos = ArchivoEvidenciaService.vacio(archivo) ? null : archivoEvidenciaService.validar(archivo, disputa.getId());
+        guardarEvidencia(disputa, usuario, descripcion, enlace, archivo, datos);
         notificacionService.notificarMediadores(disputa.getTransaccion(),
                 usuario.getNombre() + " aportó evidencia en la disputa de \"" + disputa.getTransaccion().getProducto() + "\".");
     }
 
-    private void guardarEvidencia(Disputa disputa, Usuario usuario, String descripcion, String enlace) {
+    // datos: bytes del archivo ya validado (o null si la evidencia no trae archivo)
+    private void guardarEvidencia(Disputa disputa, Usuario usuario, String descripcion, String enlace,
+                                  MultipartFile archivo, byte[] datos) {
         String texto = limpiar(descripcion);
         if (texto.length() < 5 || texto.length() > 255) {
             throw new ReglaNegocioException("Describe la evidencia (entre 5 y 255 caracteres).");
@@ -96,7 +120,11 @@ public class DisputaService {
         if (!enlaceLimpio.isEmpty() && (!enlaceLimpio.matches("(?i)^https?://\\S+$") || enlaceLimpio.length() > 255)) {
             throw new ReglaNegocioException("El enlace debe empezar con http:// o https:// (por ejemplo, una foto en Google Drive).");
         }
-        evidenciaRepository.save(new Evidencia(disputa, usuario, texto, enlaceLimpio.isEmpty() ? null : enlaceLimpio, Reloj.ahora()));
+        Evidencia evidencia = evidenciaRepository.save(
+                new Evidencia(disputa, usuario, texto, enlaceLimpio.isEmpty() ? null : enlaceLimpio, Reloj.ahora()));
+        if (datos != null) {
+            archivoEvidenciaService.guardar(evidencia, archivo.getOriginalFilename(), datos);
+        }
     }
 
     // =====================================================================

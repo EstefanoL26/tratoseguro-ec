@@ -53,7 +53,8 @@
                         <div class="evidencia-autor"><span class="numero" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span></div>
                         <p th:text="${ev.descripcion}">Descripción</p>
                         <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow">
-                            <i class="bi bi-paperclip" aria-hidden="true"></i>Ver archivo</a>
+                            <i class="bi bi-link-45deg" aria-hidden="true"></i>Ver enlace</a>
+                        <th:block th:if="${archivos.get(ev.id) != null}"><div th:replace="~{fragmentos/base :: archivo(${archivos.get(ev.id)})}"></div></th:block>
                     </div>
                 </div>
             </div>
@@ -73,7 +74,8 @@
                         <div class="evidencia-autor"><span class="numero" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span></div>
                         <p th:text="${ev.descripcion}">Descripción</p>
                         <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow">
-                            <i class="bi bi-paperclip" aria-hidden="true"></i>Ver archivo</a>
+                            <i class="bi bi-link-45deg" aria-hidden="true"></i>Ver enlace</a>
+                        <th:block th:if="${archivos.get(ev.id) != null}"><div th:replace="~{fragmentos/base :: archivo(${archivos.get(ev.id)})}"></div></th:block>
                     </div>
                 </div>
             </div>

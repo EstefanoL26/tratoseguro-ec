@@ -19,7 +19,8 @@ Estéfano Daniel López Pozo · Juan Alberto Choca Barrionuevo
 ## Tecnologías
 
 Java 17 · Spring Boot 4.1.1 · Spring MVC · Thymeleaf · Spring Data JPA · Spring Security · Flyway ·
-H2 (local) · PostgreSQL (servidor) · Stripe Java SDK · Bootstrap 5.3.3 · Maven Wrapper · Docker
+H2 (local) · PostgreSQL (servidor) · Stripe Java SDK (Checkout + Connect) · OpenPDF · springdoc-openapi (Swagger) ·
+Chart.js 4.4.1 · Bootstrap 5.3.3 · Maven Wrapper · Docker
 
 ## Cómo ejecutarlo en local
 
@@ -55,9 +56,11 @@ Los datos de ejemplo incluyen un trato en cada situación del core: creado, paga
 ./mvnw test
 ```
 
-42 pruebas: validador de cédula, formato de dinero, máquina de estados, días hábiles (ejemplo del documento de análisis),
+69 pruebas: validador de cédula, formato de dinero, máquina de estados, días hábiles (ejemplo del documento de análisis),
 liquidación (los tres casos de la tabla), flujos completos del core, disputas, vía rápida, plazos,
-permisos por rol y renderizado de cada pantalla.
+permisos por rol y renderizado de cada pantalla. Además, de las mejoras: Stripe Connect (con Stripe reemplazado
+por un doble de prueba), archivos de evidencia (tipo por firma de bytes, tamaño, permisos), calificaciones,
+comprobante PDF, código de verificación, CSV y la API REST (credenciales, permisos y errores en JSON).
 
 ## El core: motor de custodia y liquidación del pago
 
@@ -128,6 +131,76 @@ idempotencia para no reembolsar dos veces. La liberación al vendedor se registr
 
 Sin `STRIPE_SECRET_KEY`, todo funciona igual con el pago simulado.
 
+### Stripe Connect (pago a vendedores)
+
+1. En Stripe (modo de prueba) entrar a **Connect** y activarlo para la cuenta (es gratis en modo de prueba).
+2. Con la misma `STRIPE_SECRET_KEY`, el vendedor entra a **Cobros → Conectar con Stripe** y completa el registro
+   con los datos de prueba que ofrece Stripe.
+3. (Opcional) En **Developers → Webhooks**, agregar un endpoint para **eventos de cuentas conectadas** con la URL
+   `https://tratoseguro-ec.onrender.com/stripe/webhook` y el evento `account.updated`, para que la app sepa
+   cuándo se activa la cuenta aunque el vendedor no vuelva a la app. Usa el mismo `STRIPE_WEBHOOK_SECRET`
+   si es el mismo endpoint; si Stripe genera otro secreto, el endpoint necesita su propio valor.
+
+## Mejoras sobre el core
+
+### 1. Stripe Connect: el vendedor recibe su dinero de verdad (modo de prueba)
+
+Antes la liberación al vendedor solo quedaba en la contabilidad interna. Ahora se usa el modelo
+**"separate charges and transfers"** de Stripe Connect, que es como funciona un escrow real:
+
+1. El comprador le paga a la **plataforma** (Stripe Checkout). El cobro lleva `transfer_group = TRATO-{id}`.
+2. El dinero queda retenido en la cuenta de la plataforma.
+3. Al liberar (confirmación, plazo vencido o decisión del mediador), `CobroVendedorService` crea un
+   **Transfer** por el **neto** a la cuenta conectada del vendedor, ligado al cobro original (`source_transaction`).
+4. Si el vendedor todavía no conectó su cuenta, o Stripe rechaza la transferencia, la liberación se registra
+   igual y la transferencia queda **PENDIENTE**: se reintenta sola cuando el vendedor termina su registro
+   (o con el botón de finanzas). Antes de transferir se busca si ya existe una del mismo trato, para no pagar dos veces.
+
+El vendedor conecta su cuenta desde **Cobros** (`/cuenta/cobros`): la app crea una cuenta *Express* de prueba
+y lo lleva al registro de Stripe. Stripe Connect no opera en Ecuador, así que la cuenta de prueba se crea en EE. UU.
+Con pago simulado todo sigue funcionando como antes (referencia `SIMULADO`).
+
+### 2. Evidencia con archivos
+
+Las partes pueden adjuntar **fotos (JPG, PNG, WebP) o PDF de hasta 5 MB** al abrir la disputa o al aportar evidencia.
+
+- El tipo se detecta por la **firma de bytes** del archivo, no por la extensión: un `.exe` renombrado a `.jpg` se rechaza.
+- Se guarda en la base (tabla `archivo_evidencia`) con su **huella SHA-256**, porque el disco de Render se borra en
+  cada despliegue. El nombre se sanea (sin rutas ni caracteres raros).
+- Solo lo ven las partes, el mediador, finanzas y el administrador (`/evidencias/{id}/archivo`), con
+  `X-Content-Type-Options: nosniff`. El mediador ve las miniaturas de ambas partes lado a lado.
+
+### 3. Comprobante PDF y gráficos de finanzas
+
+- **Comprobante de liquidación en PDF** (`/transacciones/{id}/comprobante.pdf`): reparto R + comisión + neto = M,
+  movimientos, decisión del mediador e historial. Lleva un **código de verificación** (SHA-256 de las cifras):
+  si alguien edita el PDF, el código deja de coincidir con el que muestra la app. La cédula sale enmascarada.
+- **Panel de finanzas**: gráfico de barras del dinero por mes (retenido, liberado, reembolsado, comisiones) y
+  gráfico circular de tratos por estado (Chart.js, con tabla de datos accesible), **exportación CSV** de todos los
+  movimientos (protegida contra inyección de fórmulas de Excel) y lista de **transferencias pendientes**.
+
+### 4. Reputación del vendedor y API REST
+
+- Al cerrar un trato (liberado o reembolsado), el comprador **califica al vendedor de 1 a 5 estrellas**.
+  La reputación (promedio, tratos cerrados y % sin disputa) aparece **antes de pagar**, en el detalle y en el
+  perfil público del vendedor (`/vendedores/{id}`).
+- **API REST v1** (JSON, HTTP Basic, sin sesión) documentada con **Swagger UI** en `/swagger-ui.html`:
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| GET | `/api/v1/transacciones?estado=&buscar=` | Tratos del usuario (mismas reglas de visibilidad que la web) |
+| GET | `/api/v1/transacciones/{id}` | Detalle con plazos, liquidación, código de verificación, movimientos e historial |
+| POST | `/api/v1/transacciones/{id}/confirmar-recepcion` | El comprador confirma y se liquida |
+| GET | `/api/v1/vendedores/{id}/reputacion` | Reputación de un vendedor |
+| GET | `/api/v1/liquidacion/simular?monto=200&reembolso=50` | Calcula la liquidación y el cuadre sin guardar |
+
+```bash
+curl -u anatorres:clave123 http://localhost:8080/api/v1/transacciones
+```
+
+La API usa los mismos servicios que la web (las reglas no se duplican) y nunca expone entidades: devuelve DTOs
+sin contraseñas ni cédulas. Los errores salen en JSON (403, 409, 422).
+
 ## Administración (avance anterior)
 
 - **Usuarios** (`/admin/usuarios`): CRUD con roles; la **cédula** se valida en el servidor con el algoritmo
@@ -150,6 +223,13 @@ Sin `STRIPE_SECRET_KEY`, todo funciona igual con el pago simulado.
 | GET/POST | `/disputas`, `/disputas/{id}/resolver` | Resolver disputas y vía rápida | Mediador |
 | GET/POST | `/finanzas`, `/finanzas/plazos` | Contabilidad y revisión de plazos | Finanzas, admin |
 | GET | `/notificaciones` | Notificaciones internas | Todos |
+| POST | `/transacciones/{id}/calificar` | Calificar al vendedor (1 a 5) | Comprador |
+| GET | `/transacciones/{id}/comprobante.pdf` | Comprobante de liquidación | Participantes |
+| GET | `/evidencias/{id}/archivo` | Ver o descargar un archivo de evidencia | Participantes y mediador |
+| GET | `/vendedores/{id}` | Perfil y reputación del vendedor | Todos |
+| GET/POST | `/cuenta/cobros`, `/conectar`, `/retorno` | Cuenta de cobro (Stripe Connect) | Vendedor |
+| GET/POST | `/finanzas/movimientos.csv`, `/finanzas/transferencias` | CSV y reintento de transferencias | Finanzas, admin |
+| GET | `/swagger-ui.html`, `/api/v1/**` | Documentación y API REST | Público / HTTP Basic |
 | POST | `/stripe/webhook` | Aviso de Stripe (firma verificada) | Stripe |
 
 ## Patrón MVC
@@ -161,6 +241,7 @@ src/main/java/com/tratoseguro/
 ├── service/      → reglas del negocio: TransaccionService, LiquidacionService, DisputaService,
 │                   DiasHabilesService, PlazoService, PagoService (Stripe), NotificacionService...
 ├── controller/   → C: reciben la petición, llaman al servicio y eligen la vista
+├── api/          → API REST v1 (DTOs, controlador y errores en JSON)
 ├── config/       → seguridad y datos iniciales
 └── util/         → ValidadorCedula, Reloj (hora de Ecuador)
 src/main/resources/
@@ -176,7 +257,8 @@ src/main/resources/
 | Servidor (Render) | PostgreSQL 18 (`tratoseguro-db`), perfil `prod` |
 | Pruebas | H2 en memoria |
 
-El esquema lo crean las migraciones de **Flyway** (`db/migration/V1__esquema_core.sql`) con claves foráneas y
+El esquema lo crean las migraciones de **Flyway** (`db/migration/V1__esquema_core.sql` y
+`V2__cobros_archivos_calificaciones.sql`, que solo agrega tablas y columnas) con claves foráneas y
 restricciones con nombre (`fk_transaccion_vendedor`, `ck_transaccion_estado`, ...); Hibernate solo valida que las
 entidades coincidan. Diagrama y consultas para DBeaver: [`docs/BASE_DE_DATOS.md`](docs/BASE_DE_DATOS.md) y
 [`docs/consultas.sql`](docs/consultas.sql).

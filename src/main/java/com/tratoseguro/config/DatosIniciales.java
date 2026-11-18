@@ -8,11 +8,13 @@ import com.tratoseguro.model.Provincia;
 import com.tratoseguro.model.Rol;
 import com.tratoseguro.model.Transaccion;
 import com.tratoseguro.model.Usuario;
+import com.tratoseguro.repository.CalificacionRepository;
 import com.tratoseguro.repository.CiudadRepository;
 import com.tratoseguro.repository.FeriadoRepository;
 import com.tratoseguro.repository.ProvinciaRepository;
 import com.tratoseguro.repository.TransaccionRepository;
 import com.tratoseguro.repository.UsuarioRepository;
+import com.tratoseguro.service.CalificacionService;
 import com.tratoseguro.service.DisputaService;
 import com.tratoseguro.service.TransaccionService;
 import com.tratoseguro.util.Reloj;
@@ -42,6 +44,8 @@ public class DatosIniciales implements CommandLineRunner {
     private final TransaccionService transaccionService;
     private final DisputaService disputaService;
     private final PasswordEncoder passwordEncoder;
+    private final CalificacionRepository calificacionRepository;
+    private final CalificacionService calificacionService;
 
     // En el servidor se cambia con la variable de entorno ADMIN_PASSWORD
     @Value("${tratoseguro.admin.password}")
@@ -50,7 +54,8 @@ public class DatosIniciales implements CommandLineRunner {
     public DatosIniciales(TransaccionRepository transaccionRepository, UsuarioRepository usuarioRepository,
                           ProvinciaRepository provinciaRepository, CiudadRepository ciudadRepository,
                           FeriadoRepository feriadoRepository, TransaccionService transaccionService,
-                          DisputaService disputaService, PasswordEncoder passwordEncoder) {
+                          DisputaService disputaService, PasswordEncoder passwordEncoder,
+                          CalificacionRepository calificacionRepository, CalificacionService calificacionService) {
         this.transaccionRepository = transaccionRepository;
         this.usuarioRepository = usuarioRepository;
         this.provinciaRepository = provinciaRepository;
@@ -59,6 +64,8 @@ public class DatosIniciales implements CommandLineRunner {
         this.transaccionService = transaccionService;
         this.disputaService = disputaService;
         this.passwordEncoder = passwordEncoder;
+        this.calificacionRepository = calificacionRepository;
+        this.calificacionService = calificacionService;
     }
 
     @Override
@@ -79,6 +86,29 @@ public class DatosIniciales implements CommandLineRunner {
         if (transaccionRepository.count() == 0) {
             cargarTratos();
         }
+        // Va aparte: así también se cargan en una base que ya tenía los tratos de ejemplo (Render)
+        if (calificacionRepository.count() == 0) {
+            cargarCalificaciones();
+        }
+    }
+
+    // ---------- Calificaciones de ejemplo: la reputación de Carlos ----------
+
+    private void cargarCalificaciones() {
+        Usuario ana = usuarioRepository.findByUsername("anatorres").orElse(null);
+        if (ana == null) {
+            return;
+        }
+        calificarSiExiste("Audífonos Sony WH-1000XM5", ana, 5, "Llegaron sellados y antes del plazo. Muy recomendado.");
+        calificarSiExiste("Chaqueta de cuero", ana, 3, "Tenía una costura rota, pero el reembolso parcial fue justo.");
+    }
+
+    private void calificarSiExiste(String producto, Usuario comprador, int puntaje, String comentario) {
+        transaccionRepository.findAll().stream()
+                .filter(t -> t.getProducto().equals(producto) && t.esComprador(comprador)
+                        && calificacionService.puedeCalificarse(t))
+                .findFirst()
+                .ifPresent(t -> calificacionService.calificar(t.getId(), comprador, puntaje, comentario));
     }
 
     // ---------- Tratos de ejemplo: uno por cada situación del core ----------

@@ -26,12 +26,17 @@
                       th:text="${stripeActivo} ? 'Stripe en modo de prueba' : 'Pagos simulados (Stripe no configurado)'">Pagos simulados</span>
             </p>
         </div>
-        <!-- Los plazos se revisan solos a las 6:00; este botón adelanta la revisión -->
-        <form th:action="@{/finanzas/plazos}" method="post">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-calendar-check" aria-hidden="true"></i>Revisar plazos vencidos ahora
-            </button>
-        </form>
+        <div class="cabecera-acciones">
+            <a th:href="@{/finanzas/movimientos.csv}" class="btn btn-outline-secondary">
+                <i class="bi bi-filetype-csv" aria-hidden="true"></i>Exportar movimientos
+            </a>
+            <!-- Los plazos se revisan solos a las 6:00; este botón adelanta la revisión -->
+            <form th:action="@{/finanzas/plazos}" method="post">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-calendar-check" aria-hidden="true"></i>Revisar plazos vencidos ahora
+                </button>
+            </form>
+        </div>
     </header>
 
     <section class="kpis kpis-5" aria-label="Resumen de la custodia">
@@ -86,6 +91,37 @@
     </div>
 
     <div class="row g-4 align-items-start">
+        <section class="col-xl-8" aria-labelledby="titulo-grafico-meses">
+            <div class="panel">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-grafico-meses" class="panel-titulo">Dinero por mes</h2>
+                    <span class="panel-nota">Últimos 6 meses</span>
+                </div>
+                <div class="panel-cuerpo">
+                    <div class="grafico">
+                        <canvas id="graficoMeses" role="img"
+                                aria-label="Gráfico de barras: dinero retenido, liberado, reembolsado y comisiones de cada mes. Los datos están en la tabla de abajo."></canvas>
+                    </div>
+                    <details class="mt-3">
+                        <summary class="small fw-semibold">Ver los datos del gráfico</summary>
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm tabla mb-0">
+                                <thead><tr><th>Mes</th><th class="text-end">Retenido</th><th class="text-end">Liberado</th><th class="text-end">Reembolsado</th><th class="text-end">Comisiones</th></tr></thead>
+                                <tbody>
+                                <tr th:each="i : ${#numbers.sequence(0, #lists.size(graficos.meses) - 1)}">
+                                    <td th:text="${graficos.meses[i]}">nov 2026</td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.retenido[i]})}"></span></td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.liberado[i]})}"></span></td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.reembolsado[i]})}"></span></td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.comisiones[i]})}"></span></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
         <section class="col-xl-4" aria-labelledby="titulo-estados">
             <div class="panel">
                 <div class="panel-cabecera">
@@ -105,9 +141,41 @@
                 </div>
             </div>
         </section>
+    </div>
 
-        <section class="col-xl-8" aria-labelledby="titulo-movimientos">
-            <div class="panel h-100">
+    <!-- ---------- Stripe Connect: transferencias a vendedores pendientes ---------- -->
+    <section class="panel mt-4" th:if="${stripeActivo or !#lists.isEmpty(pendientes)}" aria-labelledby="titulo-pendientes">
+        <div class="panel-cabecera">
+            <div>
+                <h2 id="titulo-pendientes" class="panel-titulo">Transferencias a vendedores pendientes
+                    <span th:unless="${#lists.isEmpty(pendientes)}" class="cuenta" th:text="${#lists.size(pendientes)}">1</span></h2>
+                <p class="panel-nota mt-1">Liberaciones pagadas con Stripe cuyo vendedor aún no activa su cuenta de cobro (Stripe Connect). Se reintentan solas cuando el vendedor termina su registro.</p>
+            </div>
+            <form th:action="@{/finanzas/transferencias}" method="post" th:unless="${#lists.isEmpty(pendientes)}">
+                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Reintentar ahora</button>
+            </form>
+        </div>
+        <div th:if="${#lists.isEmpty(pendientes)}" class="panel-cuerpo">
+            <p class="mb-0 cuadre-ok"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> No hay transferencias pendientes.</p>
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(pendientes)}">
+            <table class="table table-hover tabla tabla-tarjetas">
+                <thead><tr><th>Trato</th><th>Vendedor</th><th class="text-end">Neto</th><th>Liberado el</th></tr></thead>
+                <tbody>
+                <tr th:each="m : ${pendientes}">
+                    <td class="celda-principal"><a class="enlace-fila" th:href="@{/transacciones/{id}(id=${m.transaccion.id})}" th:text="${m.transaccion.producto}">Producto</a></td>
+                    <td data-label="Vendedor"><span th:replace="~{fragmentos/base :: persona(${m.transaccion.vendedor.nombre}, null)}"></span></td>
+                    <td data-label="Neto" class="text-end fw-bold"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
+                    <td data-label="Liberado el" class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="row g-4 mt-0">
+        <section class="col-12" aria-labelledby="titulo-movimientos">
+            <div class="panel">
                 <div class="panel-cabecera">
                     <h2 id="titulo-movimientos" class="panel-titulo">Últimos movimientos</h2>
                 </div>
@@ -146,6 +214,44 @@
     </div>
 </main>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+    // Gráfico de dinero por mes (sin conexión al CDN se ve la tabla de datos)
+    (function () {
+        if (typeof Chart === 'undefined') { return; }
+        const datos = /*[[${graficos}]]*/ {};
+        const dinero = v => '$ ' + Number(v).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+        Chart.defaults.color = '#5b6675';
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { Chart.defaults.animation = false; }
+
+        new Chart(document.getElementById('graficoMeses'), {
+            type: 'bar',
+            data: {
+                labels: datos.meses,
+                datasets: [
+                    // Mismos colores que la barra del reparto y las etiquetas de movimientos
+                    { label: 'Retenido', data: datos.retenido, backgroundColor: '#135892', borderRadius: 4 },
+                    { label: 'Liberado', data: datos.liberado, backgroundColor: '#1b8a4a', borderRadius: 4 },
+                    { label: 'Reembolsado', data: datos.reembolsado, backgroundColor: '#e0a032', borderRadius: 4 },
+                    { label: 'Comisiones', data: datos.comisiones, backgroundColor: '#14b8b4', borderRadius: 4 }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded' } },
+                    tooltip: { callbacks: { label: c => c.dataset.label + ': ' + dinero(c.parsed.y) } }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: v => dinero(v) }, grid: { color: '#eef2f6' }, border: { display: false } },
+                    x: { grid: { display: false }, border: { display: false } }
+                }
+            }
+        });
+    })();
+</script>
 
 </body>
 </html>

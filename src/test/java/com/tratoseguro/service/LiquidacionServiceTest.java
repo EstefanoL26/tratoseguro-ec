@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class LiquidacionServiceTest {
 
-    private final LiquidacionService servicio = new LiquidacionService(null);
+    private final LiquidacionService servicio = new LiquidacionService(null, null);
     private final BigDecimal monto = new BigDecimal("200.00");
 
     @Test

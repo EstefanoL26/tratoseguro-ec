@@ -115,9 +115,12 @@
                     <h2 id="titulo-resumen" class="panel-titulo">Resumen</h2>
                 </div>
                 <div class="panel-cuerpo">
+                    <div class="vendedor-resumen mb-4">
+                        <span th:replace="~{fragmentos/base :: persona(${t.vendedor.nombre}, 'Vendedor')}"></span>
+                        <div th:replace="~{fragmentos/base :: reputacion(${reputacion}, ${t.vendedor})}"></div>
+                    </div>
                     <dl class="datos mb-4">
                         <dt>Producto</dt><dd th:text="${t.producto}">Bicicleta aro 29</dd>
-                        <dt>Vendedor</dt><dd th:text="${t.vendedor.nombre}">Carlos Mena</dd>
                         <dt>Envío</dt><dd th:text="${t.diasEntrega} + ' días hábiles después del pago'">5 días hábiles</dd>
                     </dl>
                     <div class="d-flex justify-content-between align-items-baseline pt-3 border-top">
