@@ -60,6 +60,8 @@ public class PagoService {
         String urlDetalle = urlBase + "/transacciones/" + transaccion.getId();
         SessionCreateParams parametros = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
+                // Solo tarjeta: se cobra al instante. Otros métodos (banco) tardan días y el trato no quedaría pagado
+                .addAllowedPaymentMethodType(SessionCreateParams.AllowedPaymentMethodType.CARD)
                 .setClientReferenceId(transaccion.getId().toString())
                 .putMetadata("transaccionId", transaccion.getId().toString())
                 .setCustomerEmail(transaccion.getComprador().getEmail())
