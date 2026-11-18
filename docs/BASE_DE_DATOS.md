@@ -1,7 +1,9 @@
 # Base de datos de TratoSeguro EC
 
 En el servidor (Render) la base es **PostgreSQL 18** (`tratoseguro-db`); en local y en las pruebas se usa H2 con
-el mismo esquema. Las tablas las crea **Flyway** con el script `src/main/resources/db/migration/V1__esquema_core.sql`;
+el mismo esquema. Las tablas las crea **Flyway** con los scripts de `src/main/resources/db/migration/`:
+`V1__esquema_core.sql` (el core) y `V2__cobros_archivos_calificaciones.sql` (Stripe Connect, archivos de
+evidencia y calificaciones; solo agrega columnas y tablas, no borra datos);
 Hibernate solo valida que las entidades Java coincidan (`ddl-auto=validate`).
 
 ## Diagrama entidad-relación
@@ -22,6 +24,9 @@ erDiagram
     USUARIO ||--o{ HISTORIAL : "hace el cambio"
     USUARIO ||--o{ NOTIFICACION : "recibe"
     TRANSACCION ||--o{ NOTIFICACION : "genera"
+    EVIDENCIA ||--o| ARCHIVO_EVIDENCIA : "adjunta"
+    TRANSACCION ||--o| CALIFICACION : "se califica"
+    USUARIO ||--o{ CALIFICACION : "recibe (vendedor)"
 
     USUARIO {
         bigint id PK
@@ -30,6 +35,8 @@ erDiagram
         varchar password "hash BCrypt"
         varchar rol "CHECK: 5 roles"
         bigint id_ciudad FK
+        varchar stripe_cuenta_id "cuenta conectada acct_..."
+        boolean stripe_cobros_activos
     }
     TRANSACCION {
         bigint id PK
@@ -50,7 +57,7 @@ erDiagram
         bigint id_transaccion FK
         varchar tipo "RETENCION, LIBERACION, COMISION, REEMBOLSO"
         numeric monto
-        varchar referencia "id de Stripe o SIMULADO"
+        varchar referencia "id de Stripe, SIMULADO o PENDIENTE"
     }
     HISTORIAL {
         bigint id PK
@@ -88,6 +95,23 @@ erDiagram
         varchar mensaje
         boolean leida
     }
+    ARCHIVO_EVIDENCIA {
+        bigint id PK
+        bigint id_evidencia FK "único"
+        varchar nombre
+        varchar tipo_contenido "CHECK: jpeg, png, webp, pdf"
+        int tamano "CHECK: hasta 5 MB"
+        varchar sha256 "huella del archivo"
+        bytea datos
+    }
+    CALIFICACION {
+        bigint id PK
+        bigint id_transaccion FK "único"
+        bigint id_comprador FK
+        bigint id_vendedor FK
+        int puntaje "CHECK: 1 a 5"
+        varchar comentario
+    }
     FERIADO {
         bigint id PK
         date fecha UK
@@ -113,6 +137,10 @@ erDiagram
 | `fk_evidencia_usuario` | `evidencia.id_usuario` | `usuario.id` | Quién aportó la evidencia |
 | `fk_notificacion_usuario` | `notificacion.id_usuario` | `usuario.id` | Destinatario |
 | `fk_notificacion_transaccion` | `notificacion.id_transaccion` | `transaccion.id` | Trato que la generó |
+| `fk_archivo_evidencia` | `archivo_evidencia.id_evidencia` (único) | `evidencia.id` | Foto o PDF de la evidencia |
+| `fk_calificacion_transaccion` | `calificacion.id_transaccion` (único) | `transaccion.id` | Una calificación por trato |
+| `fk_calificacion_comprador` | `calificacion.id_comprador` | `usuario.id` | Quién califica |
+| `fk_calificacion_vendedor` | `calificacion.id_vendedor` | `usuario.id` | A quién califica |
 
 ## Restricciones de la propia base (última barrera)
 
@@ -126,6 +154,8 @@ erDiagram
 | `ck_usuario_rol` | Un rol que no exista |
 | `uk_usuario_cedula`, `uk_usuario_username` | Cédulas o usuarios repetidos |
 | `uk_envio_transaccion`, `uk_disputa_transaccion` | Dos envíos o dos disputas para el mismo trato |
+| `ck_archivo_tipo`, `ck_archivo_tamano` | Archivos que no sean JPG, PNG, WebP o PDF, o de más de 5 MB |
+| `uk_calificacion_transaccion`, `ck_calificacion_puntaje` | Calificar dos veces un trato o fuera de 1 a 5 estrellas |
 
 ## Cómo se guarda cada dato
 
@@ -137,5 +167,6 @@ erDiagram
 | Estado, rol, tipo | Texto con `CHECK` | Legible en la base y validado por ella |
 | Plazos | `DATE` | Se calculan en días hábiles en el servidor |
 | Versión | `BIGINT` | `@Version`: evita liquidar el mismo dinero dos veces |
+| Archivo de evidencia | `BYTEA` en su propia tabla + huella SHA-256 | El disco de Render se borra en cada despliegue; la huella prueba que no se alteró |
 
 Consultas listas para DBeaver: [`consultas.sql`](consultas.sql).

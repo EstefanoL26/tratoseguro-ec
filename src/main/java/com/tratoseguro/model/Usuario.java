@@ -62,6 +62,14 @@ public class Usuario {
     @JoinColumn(name = "id_ciudad")
     private Ciudad ciudad;
 
+    // Stripe Connect (modo de prueba): cuenta del vendedor donde se transfiere el neto al liberar el pago
+    @Column(name = "stripe_cuenta_id")
+    private String stripeCuentaId;
+
+    // Stripe confirmó que la cuenta ya puede recibir transferencias (registro completo)
+    @Column(name = "stripe_cobros_activos", nullable = false)
+    private boolean stripeCobrosActivos;
+
     public Usuario() {
     }
 
@@ -141,5 +149,21 @@ public class Usuario {
 
     public void setCiudad(Ciudad ciudad) {
         this.ciudad = ciudad;
+    }
+
+    public String getStripeCuentaId() {
+        return stripeCuentaId;
+    }
+
+    public void setStripeCuentaId(String stripeCuentaId) {
+        this.stripeCuentaId = stripeCuentaId;
+    }
+
+    public boolean isStripeCobrosActivos() {
+        return stripeCobrosActivos;
+    }
+
+    public void setStripeCobrosActivos(boolean stripeCobrosActivos) {
+        this.stripeCobrosActivos = stripeCobrosActivos;
     }
 }

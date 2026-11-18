@@ -2,8 +2,10 @@ package com.tratoseguro.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -15,17 +17,37 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
+    /**
+     * API REST (/api/**): HTTP Basic, sin sesión ni cookies. Como no usa cookies,
+     * no es vulnerable a CSRF y no necesita el token (cada petición manda sus credenciales).
+     */
     @Bean
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/api/**")
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .httpBasic(basic -> basic.realmName("TratoSeguro EC API"))
+                .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable());
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/registro", "/css/**", "/img/**", "/js/**", "/error").permitAll()
+                        // Documentación de la API (la API en sí exige usuario y contraseña)
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Stripe avisa los pagos aquí; se acepta solo con una firma válida (ver StripeWebhookController)
                         .requestMatchers(HttpMethod.POST, "/stripe/webhook").permitAll()
                         // Cada sección solo la puede usar su rol (si no, responde 403)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/disputas/**").hasRole("MEDIADOR")
                         .requestMatchers("/finanzas/**").hasAnyRole("FINANZAS", "ADMIN")
+                        .requestMatchers("/cuenta/cobros/**").hasRole("VENDEDOR")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

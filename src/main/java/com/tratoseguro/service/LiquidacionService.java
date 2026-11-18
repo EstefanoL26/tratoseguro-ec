@@ -32,9 +32,11 @@ public class LiquidacionService {
     public static final BigDecimal PORCENTAJE_COMISION = new BigDecimal("0.03");
 
     private final MovimientoRepository movimientoRepository;
+    private final CobroVendedorService cobroVendedorService;
 
-    public LiquidacionService(MovimientoRepository movimientoRepository) {
+    public LiquidacionService(MovimientoRepository movimientoRepository, CobroVendedorService cobroVendedorService) {
         this.movimientoRepository = movimientoRepository;
+        this.cobroVendedorService = cobroVendedorService;
     }
 
     // Solo calcula (no guarda nada). La usa también la vista previa del mediador.
@@ -74,7 +76,9 @@ public class LiquidacionService {
             registrarMovimiento(transaccion, TipoMovimiento.COMISION, liquidacion.getComision(), ahora, null);
         }
         if (liquidacion.getNetoVendedor().signum() > 0) {
-            registrarMovimiento(transaccion, TipoMovimiento.LIBERACION, liquidacion.getNetoVendedor(), ahora, null);
+            // Stripe Connect: transferencia a la cuenta del vendedor (o SIMULADO / PENDIENTE)
+            String referencia = cobroVendedorService.pagarAlVendedor(transaccion, liquidacion.getNetoVendedor());
+            registrarMovimiento(transaccion, TipoMovimiento.LIBERACION, liquidacion.getNetoVendedor(), ahora, referencia);
         }
         return liquidacion;
     }

@@ -39,8 +39,11 @@ public class Movimiento {
     @Column(nullable = false)
     private LocalDateTime fecha;
 
-    // Identificador del pago o reembolso en Stripe, o "SIMULADO"
+    // Identificador del pago, reembolso o transferencia en Stripe, "SIMULADO",
+    // o "PENDIENTE" si la transferencia al vendedor todavía no se pudo hacer
     private String referencia;
+
+    public static final String REFERENCIA_PENDIENTE = "PENDIENTE";
 
     public Movimiento() {
     }
@@ -79,5 +82,14 @@ public class Movimiento {
 
     public String getReferencia() {
         return referencia;
+    }
+
+    // Solo se usa para completar una transferencia que quedó pendiente
+    public void setReferencia(String referencia) {
+        this.referencia = referencia;
+    }
+
+    public boolean isTransferenciaPendiente() {
+        return tipo == TipoMovimiento.LIBERACION && REFERENCIA_PENDIENTE.equals(referencia);
     }
 }

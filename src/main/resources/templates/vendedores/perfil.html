@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head(${vendedor.nombre})}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('tratos')}"></nav>
+
+<main class="container py-4">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <a th:href="@{/transacciones}" class="d-inline-block mb-3 small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a los tratos</a>
+
+    <div class="row g-4">
+        <section class="col-lg-4" aria-labelledby="titulo-vendedor">
+            <div class="card">
+                <div class="card-body p-4">
+                    <p class="subtitulo mb-1">Vendedor</p>
+                    <h1 id="titulo-vendedor" class="titulo mb-1" th:text="${vendedor.nombre}">Carlos Mena</h1>
+                    <p class="text-muted mb-3" th:if="${vendedor.ciudad}"
+                       th:text="${vendedor.ciudad.nombre} + ', ' + ${vendedor.ciudad.provincia.nombre}">Quito, Pichincha</p>
+
+                    <th:block th:if="${reputacion.sinCalificaciones}">
+                        <p class="mb-3 text-muted">Todavía no tiene calificaciones.</p>
+                    </th:block>
+                    <th:block th:unless="${reputacion.sinCalificaciones}">
+                        <p class="monto-grande mb-0" th:text="${#numbers.formatDecimal(reputacion.promedio, 1, 1, 'COMMA')}">4,5</p>
+                        <span th:replace="~{fragmentos/base :: estrellas(${reputacion.estrellasLlenas}, ${'Promedio ' + reputacion.promedio + ' de 5'})}"></span>
+                        <p class="small text-muted mb-3" th:text="${reputacion.calificaciones} + (${reputacion.calificaciones == 1} ? ' calificación' : ' calificaciones')">3 calificaciones</p>
+                    </th:block>
+
+                    <dl class="datos mb-0">
+                        <dt>Tratos cerrados</dt><dd class="numero" th:text="${reputacion.tratosCerrados}">4</dd>
+                        <dt>Con disputa</dt><dd class="numero" th:text="${reputacion.tratosConDisputa}">1</dd>
+                        <dt>Sin disputa</dt>
+                        <dd class="numero" th:text="${reputacion.porcentajeSinDisputa != null} ? ${reputacion.porcentajeSinDisputa} + ' %' : '—'">75 %</dd>
+                    </dl>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-8" aria-labelledby="titulo-opiniones">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h2 id="titulo-opiniones" class="ficha-titulo">Opiniones de sus compradores</h2>
+                    <p th:if="${#lists.isEmpty(calificaciones)}" class="text-muted mb-0">Aún no hay opiniones.</p>
+                    <div th:each="c : ${calificaciones}" class="evidencia">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span th:replace="~{fragmentos/base :: estrellas(${c.puntaje}, ${c.puntaje + ' de 5 estrellas'})}"></span>
+                            <span class="autor" th:text="${c.comprador.nombre}">Ana Torres</span>
+                            <span class="cuando" th:text="'· ' + ${#temporals.format(c.fecha, 'dd/MM/yyyy')}">· 01/10/2026</span>
+                        </div>
+                        <p class="mb-1 mt-1" th:if="${c.comentario}" th:text="${c.comentario}">Comentario</p>
+                        <p class="small text-muted mb-0" th:text="'Trato: ' + ${c.transaccion.producto}">Trato: Audífonos</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+</body>
+</html>
