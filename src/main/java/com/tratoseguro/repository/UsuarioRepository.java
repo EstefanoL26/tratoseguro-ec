@@ -15,6 +15,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByUsername(String username);
 
+    // Webhook de Stripe Connect: Stripe avisa por el id de la cuenta conectada (acct_...)
+    Optional<Usuario> findByStripeCuentaId(String stripeCuentaId);
+
     List<Usuario> findAllByOrderByIdAsc();
 
     // Para los dropdowns (por ejemplo, escoger el comprador de un trato)

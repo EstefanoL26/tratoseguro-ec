@@ -16,12 +16,17 @@
                 <span th:text="${stripeActivo} ? 'Stripe en modo de prueba' : 'Pagos simulados (Stripe no configurado)'">Pagos simulados</span>
             </p>
         </div>
-        <!-- Los plazos se revisan solos a las 6:00; este botón adelanta la revisión -->
-        <form th:action="@{/finanzas/plazos}" method="post">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-calendar-check" aria-hidden="true"></i>Revisar plazos vencidos ahora
-            </button>
-        </form>
+        <div class="d-flex flex-wrap gap-2">
+            <a th:href="@{/finanzas/movimientos.csv}" class="btn btn-outline-primary">
+                <i class="bi bi-filetype-csv" aria-hidden="true"></i>Exportar movimientos (CSV)
+            </a>
+            <!-- Los plazos se revisan solos a las 6:00; este botón adelanta la revisión -->
+            <form th:action="@{/finanzas/plazos}" method="post">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-calendar-check" aria-hidden="true"></i>Revisar plazos vencidos ahora
+                </button>
+            </form>
+        </div>
     </div>
 
     <section class="card mb-4" aria-labelledby="titulo-resumen">
@@ -44,11 +49,84 @@
         </div>
     </section>
 
+    <!-- ---------- Gráficos ---------- -->
+    <div class="row g-4 mb-4">
+        <section class="col-lg-8" aria-labelledby="titulo-grafico-meses">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h2 id="titulo-grafico-meses" class="ficha-titulo">Dinero por mes (últimos 6 meses)</h2>
+                    <div class="grafico">
+                        <canvas id="graficoMeses" role="img"
+                                aria-label="Gráfico de barras: dinero retenido, liberado, reembolsado y comisiones de cada mes. Los datos están en la tabla de abajo."></canvas>
+                    </div>
+                    <details class="mt-3">
+                        <summary class="small">Ver los datos del gráfico</summary>
+                        <div class="table-responsive mt-2">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead><tr><th>Mes</th><th class="text-end">Retenido</th><th class="text-end">Liberado</th><th class="text-end">Reembolsado</th><th class="text-end">Comisiones</th></tr></thead>
+                                <tbody>
+                                <tr th:each="i : ${#numbers.sequence(0, #lists.size(graficos.meses) - 1)}">
+                                    <td th:text="${graficos.meses[i]}">nov 2026</td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.retenido[i]})}"></span></td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.liberado[i]})}"></span></td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.reembolsado[i]})}"></span></td>
+                                    <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${graficos.comisiones[i]})}"></span></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+        <section class="col-lg-4" aria-labelledby="titulo-grafico-estados">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h2 id="titulo-grafico-estados" class="ficha-titulo">Tratos por estado</h2>
+                    <div class="grafico">
+                        <canvas id="graficoEstados" role="img"
+                                aria-label="Gráfico circular de tratos por estado. Las cantidades están en la lista Tratos por estado."></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ---------- Stripe Connect: transferencias a vendedores pendientes ---------- -->
+    <section class="card mb-4" th:if="${stripeActivo or !#lists.isEmpty(pendientes)}" aria-labelledby="titulo-pendientes">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                <div>
+                    <h2 id="titulo-pendientes" class="ficha-titulo mb-1">Transferencias a vendedores pendientes</h2>
+                    <p class="small text-muted mb-3">Liberaciones pagadas con Stripe cuyo vendedor aún no activa su cuenta de cobro (Stripe Connect).
+                        Se reintentan solas cuando el vendedor termina su registro.</p>
+                </div>
+                <form th:action="@{/finanzas/transferencias}" method="post" th:unless="${#lists.isEmpty(pendientes)}">
+                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Reintentar ahora</button>
+                </form>
+            </div>
+            <p th:if="${#lists.isEmpty(pendientes)}" class="mb-0 cuadre-ok"><i class="bi bi-check-circle" aria-hidden="true"></i> No hay transferencias pendientes.</p>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(pendientes)}">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Trato</th><th>Vendedor</th><th class="text-end">Neto</th><th>Liberado el</th></tr></thead>
+                    <tbody>
+                    <tr th:each="m : ${pendientes}">
+                        <td><a th:href="@{/transacciones/{id}(id=${m.transaccion.id})}" th:text="${m.transaccion.producto}">Producto</a></td>
+                        <td th:text="${m.transaccion.vendedor.nombre}">Carlos Mena</td>
+                        <td class="text-end"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
+                        <td class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
     <div class="row g-4">
         <section class="col-lg-4" aria-labelledby="titulo-estados">
             <div class="card">
                 <div class="card-body p-4">
-                    <h2 id="titulo-estados" class="ficha-titulo">Tratos por estado</h2>
+                    <h2 id="titulo-estados" class="ficha-titulo">Cantidad por estado</h2>
                     <dl class="datos">
                         <th:block th:each="par : ${porEstado}">
                             <dt><span th:replace="~{fragmentos/base :: estado(${par.key})}"></span></dt>
@@ -89,5 +167,52 @@
     </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+    (function () {
+        if (typeof Chart === 'undefined') { return; } // sin conexión al CDN se ven las tablas
+        const datos = /*[[${graficos}]]*/ {};
+        const dinero = v => '$ ' + Number(v).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const reducirMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+        Chart.defaults.color = '#5b6675';
+        if (reducirMovimiento) { Chart.defaults.animation = false; }
+
+        new Chart(document.getElementById('graficoMeses'), {
+            type: 'bar',
+            data: {
+                labels: datos.meses,
+                datasets: [
+                    { label: 'Retenido', data: datos.retenido, backgroundColor: '#135892' },
+                    { label: 'Liberado', data: datos.liberado, backgroundColor: '#1b6b34' },
+                    { label: 'Reembolsado', data: datos.reembolsado, backgroundColor: '#5a3d99' },
+                    { label: 'Comisiones', data: datos.comisiones, backgroundColor: '#14b8b4' }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: { callbacks: { label: c => c.dataset.label + ': ' + dinero(c.parsed.y) } }
+                },
+                scales: { y: { beginAtZero: true, ticks: { callback: v => dinero(v) }, grid: { color: '#e3e8ee' } }, x: { grid: { display: false } } }
+            }
+        });
+
+        new Chart(document.getElementById('graficoEstados'), {
+            type: 'doughnut',
+            data: {
+                labels: datos.estados,
+                datasets: [{
+                    data: datos.cantidades,
+                    // Mismos colores que las etiquetas de estado (estilos.css)
+                    backgroundColor: ['#8a95a5', '#135892', '#14b8b4', '#2e9d52', '#d98a1c', '#7b5cc4', '#c2414b'],
+                    borderColor: '#fff', borderWidth: 2
+                }]
+            },
+            options: { maintainAspectRatio: false, cutout: '58%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+        });
+    })();
+</script>
 </body>
 </html>

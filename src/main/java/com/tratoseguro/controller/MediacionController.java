@@ -5,6 +5,7 @@ import com.tratoseguro.model.Disputa;
 import com.tratoseguro.model.Evidencia;
 import com.tratoseguro.model.Liquidacion;
 import com.tratoseguro.model.Transaccion;
+import com.tratoseguro.service.ArchivoEvidenciaService;
 import com.tratoseguro.service.DisputaService;
 import com.tratoseguro.service.LiquidacionService;
 import com.tratoseguro.service.UsuarioService;
@@ -32,12 +33,14 @@ public class MediacionController {
     private final DisputaService disputaService;
     private final LiquidacionService liquidacionService;
     private final UsuarioService usuarioService;
+    private final ArchivoEvidenciaService archivoEvidenciaService;
 
     public MediacionController(DisputaService disputaService, LiquidacionService liquidacionService,
-                               UsuarioService usuarioService) {
+                               UsuarioService usuarioService, ArchivoEvidenciaService archivoEvidenciaService) {
         this.disputaService = disputaService;
         this.liquidacionService = liquidacionService;
         this.usuarioService = usuarioService;
+        this.archivoEvidenciaService = archivoEvidenciaService;
     }
 
     @GetMapping
@@ -67,6 +70,7 @@ public class MediacionController {
         model.addAttribute("t", t);
         model.addAttribute("evidenciasComprador", delComprador);
         model.addAttribute("evidenciasVendedor", delVendedor);
+        model.addAttribute("archivos", archivoEvidenciaService.deDisputa(id));
         model.addAttribute("decisiones", Decision.values());
         // Liquidación de referencia de cada caso (la definitiva la vuelve a calcular el servidor al guardar)
         model.addAttribute("liqVendedor", liquidacionService.calcular(t.getMonto(), BigDecimal.ZERO));

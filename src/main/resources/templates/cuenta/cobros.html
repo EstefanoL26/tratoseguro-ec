@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos/base :: head('Mis cobros')}"></head>
+<body>
+
+<nav th:replace="~{fragmentos/base :: navbar('cobros')}"></nav>
+
+<main class="container py-4">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <div class="encabezado-pagina">
+        <div>
+            <h1 class="titulo mb-0">Mis cobros</h1>
+            <p class="subtitulo mb-0">Lo que TratoSeguro te ha liberado y cómo te llega el dinero</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- ---------- Cuenta de cobro en Stripe Connect ---------- -->
+        <section class="col-lg-7" aria-labelledby="titulo-cuenta">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h2 id="titulo-cuenta" class="ficha-titulo">Cuenta de cobro</h2>
+
+                    <!-- Sin Stripe: todo es simulado -->
+                    <div th:unless="${stripeActivo}" class="estado-cuenta">
+                        <i class="bi bi-info-circle text-muted" aria-hidden="true"></i>
+                        <div>
+                            <p class="fw-semibold mb-1">Pagos simulados</p>
+                            <p class="mb-0 text-muted">Este servidor no tiene Stripe configurado: las liberaciones se registran en la contabilidad interna y no necesitas conectar una cuenta.</p>
+                        </div>
+                    </div>
+
+                    <th:block th:if="${stripeActivo}">
+                        <!-- Activa -->
+                        <div th:if="${vendedor.stripeCobrosActivos}" class="estado-cuenta">
+                            <i class="bi bi-patch-check-fill cuadre-ok" aria-hidden="true"></i>
+                            <div>
+                                <p class="fw-semibold mb-1">Cuenta activa en Stripe (modo de prueba)</p>
+                                <p class="mb-2 text-muted">Cuando un comprador confirma la recepción, el neto (monto menos reembolso y 3 % de comisión) se transfiere automáticamente a tu cuenta.</p>
+                                <p class="small mb-0">Cuenta <span class="codigo-verificacion" th:text="${vendedor.stripeCuentaId}">acct_123</span></p>
+                            </div>
+                        </div>
+
+                        <!-- Registro empezado pero sin terminar -->
+                        <div th:if="${vendedor.stripeCuentaId != null and !vendedor.stripeCobrosActivos}" class="estado-cuenta">
+                            <i class="bi bi-hourglass-split text-warning" aria-hidden="true"></i>
+                            <div>
+                                <p class="fw-semibold mb-1">Registro sin terminar</p>
+                                <p class="mb-3 text-muted">Stripe todavía no habilita las transferencias a tu cuenta. Termina el registro para recibir lo que se te libere.</p>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <form th:action="@{/cuenta/cobros/conectar}" method="post">
+                                        <button type="submit" class="btn btn-primary"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>Continuar registro en Stripe</button>
+                                    </form>
+                                    <form th:action="@{/cuenta/cobros/actualizar}" method="post">
+                                        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>Ya terminé, revisar</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sin cuenta -->
+                        <div th:if="${vendedor.stripeCuentaId == null}" class="estado-cuenta">
+                            <i class="bi bi-bank text-primary" aria-hidden="true"></i>
+                            <div>
+                                <p class="fw-semibold mb-1">Conecta tu cuenta de cobro</p>
+                                <p class="mb-2 text-muted">TratoSeguro usa <strong>Stripe Connect</strong> para pagarte: el comprador le paga a la plataforma, el dinero queda retenido y, al liberarse, se te transfiere el neto.</p>
+                                <div class="aviso-prueba mb-3" role="note">
+                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                                    <div><strong>Modo de prueba.</strong> En el registro de Stripe usa los datos de prueba que ofrece el formulario
+                                        (por ejemplo, el código SMS <span class="numero">000-000</span> y la cuenta bancaria de prueba). No se mueve dinero real.</div>
+                                </div>
+                                <form th:action="@{/cuenta/cobros/conectar}" method="post">
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-link-45deg" aria-hidden="true"></i>Conectar con Stripe</button>
+                                </form>
+                            </div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </section>
+
+        <!-- ---------- Resumen y reputación ---------- -->
+        <section class="col-lg-5" aria-labelledby="titulo-resumen-cobros">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h2 id="titulo-resumen-cobros" class="ficha-titulo">Resumen</h2>
+                    <dl class="datos">
+                        <dt>Recibido</dt><dd><span th:replace="~{fragmentos/base :: dinero(${totalTransferido})}"></span></dd>
+                        <dt>Pendiente de transferir</dt><dd><span th:replace="~{fragmentos/base :: dinero(${totalPendiente})}"></span></dd>
+                        <dt>Tu reputación</dt><dd><div th:replace="~{fragmentos/base :: reputacion(${reputacion}, ${vendedor})}"></div></dd>
+                    </dl>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ---------- Liberaciones ---------- -->
+    <section class="card card-listado" aria-labelledby="titulo-liberaciones">
+        <div class="card-body p-4">
+            <h2 id="titulo-liberaciones" class="ficha-titulo">Liberaciones</h2>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 tabla-tarjetas">
+                    <thead><tr><th>Trato</th><th class="text-end">Neto</th><th>Fecha</th><th>Transferencia</th></tr></thead>
+                    <tbody>
+                    <tr th:each="m : ${liberaciones}">
+                        <td class="celda-principal"><a th:href="@{/transacciones/{id}(id=${m.transaccion.id})}" th:text="${m.transaccion.producto}">Producto</a></td>
+                        <td data-label="Neto" class="text-end"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
+                        <td data-label="Fecha" class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
+                        <td data-label="Transferencia" class="small text-break">
+                            <span th:if="${m.transferenciaPendiente}" class="ref-pendiente">Pendiente</span>
+                            <span th:if="${!m.transferenciaPendiente and m.referencia != null and #strings.startsWith(m.referencia, 'tr_')}" class="ref-transferida"
+                                  th:text="${m.referencia}">tr_123</span>
+                            <span th:unless="${m.transferenciaPendiente or (m.referencia != null and #strings.startsWith(m.referencia, 'tr_'))}" class="text-muted">Simulada</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(liberaciones)}">
+                        <td colspan="4" class="celda-vacia lista-vacia">Todavía no se te ha liberado ningún pago.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

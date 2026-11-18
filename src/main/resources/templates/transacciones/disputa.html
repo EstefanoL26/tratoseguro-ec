@@ -22,7 +22,7 @@
                         <div>Mientras dure la disputa el dinero sigue retenido y los plazos se pausan. Un mediador revisará la evidencia de ambas partes y decidirá.</div>
                     </div>
 
-                    <form th:action="@{/transacciones/{id}/disputa(id=${t.id})}" method="post">
+                    <form th:action="@{/transacciones/{id}/disputa(id=${t.id})}" method="post" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="motivo" class="form-label">¿Qué pasó? *</label>
                             <textarea id="motivo" name="motivo" rows="3" class="form-control" required minlength="10" maxlength="255"
@@ -36,11 +36,17 @@
                                 <input type="text" id="evidencia" name="evidencia" class="form-control" maxlength="255"
                                        placeholder="Foto del producto recibido">
                             </div>
+                            <div class="mb-3">
+                                <label for="archivo" class="form-label">Foto o PDF</label>
+                                <input type="file" id="archivo" name="archivo" class="form-control" data-max-mb="5"
+                                       accept="image/jpeg,image/png,image/webp,application/pdf" aria-describedby="archivo-ayuda">
+                                <div id="archivo-ayuda" class="form-text">JPG, PNG, WebP o PDF de hasta 5 MB.</div>
+                            </div>
                             <div class="mb-4">
-                                <label for="enlace" class="form-label">Enlace al archivo</label>
+                                <label for="enlace" class="form-label">Enlace</label>
                                 <input type="url" id="enlace" name="enlace" class="form-control" maxlength="255"
                                        placeholder="https://drive.google.com/..." aria-describedby="enlace-ayuda">
-                                <div id="enlace-ayuda" class="form-text">Sube la foto o el video a Google Drive y pega aquí el enlace.</div>
+                                <div id="enlace-ayuda" class="form-text">Para videos o archivos grandes: súbelos a Google Drive y pega aquí el enlace.</div>
                             </div>
                         </fieldset>
                         <div class="d-flex justify-content-end gap-2">

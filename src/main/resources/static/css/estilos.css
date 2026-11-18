@@ -911,3 +911,153 @@ textarea {
     color: var(--ts-azul-oscuro);
     font-variant-numeric: tabular-nums;
 }
+
+/* =========================================================
+   Mejoras del core: reputación, archivos de evidencia,
+   cobros con Stripe Connect y gráficos de finanzas
+   ========================================================= */
+
+/* ---------- Estrellas y reputación ---------- */
+
+.estrellas {
+    display: inline-flex;
+    gap: .1rem;
+    color: #b7791f; /* ámbar oscuro: 3.6:1 sobre blanco, se distingue también sin color por el relleno */
+    vertical-align: -.1em;
+}
+
+.reputacion {
+    line-height: 1.5;
+}
+
+/* Selector de 1 a 5 estrellas con radios accesibles (se puede usar con teclado) */
+.entrada-estrellas {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: .25rem;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.entrada-estrellas input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+
+.entrada-estrellas label {
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--ts-borde-campo);
+    cursor: pointer;
+    padding: .1rem;
+    border-radius: var(--bs-border-radius-sm);
+}
+
+.entrada-estrellas label .bi-star-fill { display: none; }
+
+/* Se rellenan la estrella marcada y las anteriores (por el orden invertido, son las siguientes en el DOM) */
+.entrada-estrellas input:checked ~ label,
+.entrada-estrellas label:hover,
+.entrada-estrellas label:hover ~ label {
+    color: #b7791f;
+}
+
+.entrada-estrellas input:checked ~ label .bi-star-fill,
+.entrada-estrellas label:hover .bi-star-fill,
+.entrada-estrellas label:hover ~ label .bi-star-fill { display: inline; }
+
+.entrada-estrellas input:checked ~ label .bi-star,
+.entrada-estrellas label:hover .bi-star,
+.entrada-estrellas label:hover ~ label .bi-star { display: none; }
+
+.entrada-estrellas input:focus-visible + label {
+    outline: 3px solid var(--bs-focus-ring-color);
+}
+
+/* ---------- Archivos de evidencia ---------- */
+
+.archivo-evidencia {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-top: .5rem;
+    padding: .5rem;
+    border: 1px solid var(--ts-linea);
+    border-radius: var(--bs-border-radius);
+    background-color: #fff;
+    max-width: 28rem;
+}
+
+.archivo-evidencia img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: var(--bs-border-radius-sm);
+    flex-shrink: 0;
+}
+
+.archivo-evidencia .icono-pdf {
+    font-size: 2.25rem;
+    color: #a1262e;
+    width: 72px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.archivo-evidencia .huella {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .7rem;
+    color: var(--ts-texto-secundario);
+    word-break: break-all;
+}
+
+/* ---------- Cobros y comprobantes ---------- */
+
+.codigo-verificacion {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--ts-azul-oscuro);
+}
+
+.ref-pendiente {
+    display: inline-block;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background-color: #fdf2df;
+    color: #8a5300;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.ref-transferida {
+    color: #1b6b34;
+    font-weight: 600;
+}
+
+.estado-cuenta {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.estado-cuenta > .bi {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+/* ---------- Gráficos de finanzas ---------- */
+
+.grafico {
+    position: relative;
+    height: 280px;
+}
+
+@media (max-width: 575.98px) {
+    .grafico {
+        height: 240px;
+    }
+}

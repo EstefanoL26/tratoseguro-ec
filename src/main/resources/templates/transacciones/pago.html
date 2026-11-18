@@ -18,7 +18,11 @@
                     <!-- Resumen del trato -->
                     <dl class="datos mb-4">
                         <dt>Producto</dt><dd class="fw-semibold" th:text="${t.producto}">Bicicleta aro 29</dd>
-                        <dt>Vendedor</dt><dd th:text="${t.vendedor.nombre}">Carlos Mena</dd>
+                        <dt>Vendedor</dt>
+                        <dd>
+                            <span class="fw-semibold" th:text="${t.vendedor.nombre}">Carlos Mena</span>
+                            <div th:replace="~{fragmentos/base :: reputacion(${reputacion}, ${t.vendedor})}"></div>
+                        </dd>
                         <dt>Envío</dt><dd th:text="${t.diasEntrega} + ' días hábiles después del pago'">5 días hábiles</dd>
                         <dt>Total a pagar</dt><dd class="monto fs-5" th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 200,00</dd>
                     </dl>

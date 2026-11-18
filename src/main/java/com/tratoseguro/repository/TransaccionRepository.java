@@ -26,4 +26,12 @@ public interface TransaccionRepository extends JpaRepository<Transaccion, Long> 
     Optional<Transaccion> findByStripeSessionId(String stripeSessionId);
 
     long countByEstado(EstadoTransaccion estado);
+
+    // Reputación: tratos cerrados del vendedor y cuántos de ellos pasaron por una disputa
+    @Query("select count(t) from Transaccion t where t.vendedor.id = :vendedorId "
+            + "and t.estado in (com.tratoseguro.model.EstadoTransaccion.LIBERADA, com.tratoseguro.model.EstadoTransaccion.REEMBOLSADA)")
+    long contarCerradosDeVendedor(@Param("vendedorId") Long vendedorId);
+
+    @Query("select count(d) from Disputa d where d.transaccion.vendedor.id = :vendedorId and d.decision is not null")
+    long contarDisputasResueltasDeVendedor(@Param("vendedorId") Long vendedorId);
 }
