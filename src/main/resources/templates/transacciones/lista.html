@@ -1,93 +1,178 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos/base :: head('Tratos')}"></head>
-<body>
+<body class="app">
 
-<nav th:replace="~{fragmentos/base :: navbar('tratos')}"></nav>
+<th:block th:replace="~{fragmentos/base :: navbar('tratos')}"></th:block>
 
-<main class="container py-4">
+<div class="contenido-envoltura">
+<main class="contenido"
+      th:with="esComprador=${rolActual?.name() == 'COMPRADOR'},
+               filtrado=${buscar != null or estadoFiltro != null},
+               enCurso=${transacciones.?[estado.name() == 'PAGADA' or estado.name() == 'ENVIADA' or estado.name() == 'EN_DISPUTA']},
+               activos=${transacciones.?[estado.name() == 'CREADA' or estado.name() == 'PAGADA' or estado.name() == 'ENVIADA' or estado.name() == 'EN_DISPUTA']},
+               liberados=${transacciones.?[estado.name() == 'LIBERADA']},
+               enDisputa=${transacciones.?[estado.name() == 'EN_DISPUTA']}">
     <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
 
-    <div class="encabezado-pagina">
+    <header class="cabecera">
         <div>
-            <h1 class="titulo mb-0">Tratos</h1>
-            <p class="subtitulo mb-0" th:if="${esVendedorActual}">Tus ventas: el dinero queda retenido hasta que el comprador confirme.</p>
-            <p class="subtitulo mb-0" th:if="${rolActual?.name() == 'COMPRADOR'}">Tus compras protegidas: pagas y el vendedor cobra cuando confirmas la recepción.</p>
-            <p class="subtitulo mb-0" th:if="${esMediador}">Tratos que tienen o tuvieron una disputa.</p>
-            <p class="subtitulo mb-0" th:if="${esFinanzas}">Todos los tratos de la plataforma (solo lectura).</p>
+            <ol class="migas" aria-label="Ubicación">
+                <li><a th:href="@{/transacciones}">Inicio</a></li>
+                <li aria-current="page">Tratos</li>
+            </ol>
+            <h1 class="titulo" th:text="'Hola, ' + ${#strings.arraySplit(nombreActual, ' ')[0]}">Hola, Ana</h1>
+            <p class="subtitulo" th:if="${esVendedorActual}">Tus ventas: el dinero queda retenido hasta que el comprador confirme.</p>
+            <p class="subtitulo" th:if="${esComprador}">Tus compras protegidas: pagas y el vendedor cobra cuando confirmas la recepción.</p>
+            <p class="subtitulo" th:if="${esMediador}">Tratos que tienen o tuvieron una disputa.</p>
+            <p class="subtitulo" th:if="${esFinanzas}">Todos los tratos de la plataforma (solo lectura).</p>
         </div>
-        <a th:if="${esVendedorActual}" th:href="@{/transacciones/nueva}" class="btn btn-primary">
-            <i class="bi bi-plus-lg" aria-hidden="true"></i>Nuevo trato
-        </a>
-    </div>
+        <div class="cabecera-acciones">
+            <a th:if="${esVendedorActual}" th:href="@{/transacciones/nueva}" class="btn btn-primary">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i>Nuevo trato
+            </a>
+        </div>
+    </header>
 
-    <div class="card card-listado">
-        <div class="card-body">
-            <form th:action="@{/transacciones}" method="get" class="row g-2 mb-3" role="search">
-                <div class="col-sm-6 col-md-5">
-                    <label for="buscar" class="visually-hidden">Buscar por producto</label>
+    <!-- Resumen: solo sin filtros, para que los números cuenten todos los tratos -->
+    <section class="kpis kpis-3" th:unless="${filtrado}" aria-label="Resumen de tus tratos">
+        <div class="kpi kpi-destacado">
+            <span class="kpi-icono"><i class="bi bi-safe" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor"
+                      th:text="'$ ' + ${#numbers.formatDecimal(#lists.isEmpty(enCurso) ? 0 : #aggregates.sum(enCurso.![monto]), 1, 'POINT', 2, 'COMMA')}">$ 650,00</span>
+                <span class="kpi-etiqueta">En custodia ahora</span>
+            </div>
+        </div>
+        <div class="kpi">
+            <span class="kpi-icono"><i class="bi bi-arrow-left-right" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${#lists.size(activos)}">5</span>
+                <span class="kpi-etiqueta">Tratos activos</span>
+            </div>
+        </div>
+        <div class="kpi kpi-verde">
+            <span class="kpi-icono"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${#lists.size(liberados)}">1</span>
+                <span class="kpi-etiqueta">Pagados al vendedor</span>
+            </div>
+        </div>
+        <div class="kpi" th:classappend="${#lists.isEmpty(enDisputa)} ? 'kpi-turquesa' : 'kpi-rojo'">
+            <span class="kpi-icono"><i class="bi bi-shield-exclamation" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${#lists.size(enDisputa)}">1</span>
+                <span class="kpi-etiqueta">En disputa</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-tratos">
+        <div class="panel-cabecera">
+            <h2 id="titulo-tratos" class="panel-titulo">
+                <span th:text="${esVendedorActual or esComprador} ? 'Tus tratos' : 'Todos los tratos'">Tus tratos</span> <span class="cuenta" th:text="${#lists.size(transacciones)}">8</span>
+            </h2>
+            <p class="panel-nota mb-0">El dinero de cada trato queda en custodia hasta que se confirme la entrega.</p>
+        </div>
+
+        <div class="herramientas">
+            <!-- Filtro por estado como pestañas (mantienen la búsqueda escrita) -->
+            <nav aria-label="Filtrar por estado">
+                <ul class="pestanas">
+                    <li>
+                        <a class="pestana" th:classappend="${estadoFiltro == null} ? 'active'"
+                           th:attr="aria-current=${estadoFiltro == null} ? 'page' : null"
+                           th:href="@{/transacciones(buscar=${buscar})}">Todos</a>
+                    </li>
+                    <li th:each="e : ${estados}">
+                        <a class="pestana" th:classappend="${e == estadoFiltro} ? 'active'"
+                           th:attr="aria-current=${e == estadoFiltro} ? 'page' : null"
+                           th:href="@{/transacciones(estado=${e}, buscar=${buscar})}" th:text="${e.descripcion}">Pagada</a>
+                    </li>
+                </ul>
+            </nav>
+            <form th:action="@{/transacciones}" method="get" role="search">
+                <input type="hidden" name="estado" th:if="${estadoFiltro != null}" th:value="${estadoFiltro}">
+                <label for="buscar" class="visually-hidden">Buscar por producto</label>
+                <div class="buscador">
+                    <i class="bi bi-search" aria-hidden="true"></i>
                     <input type="search" id="buscar" name="buscar" th:value="${buscar}" class="form-control"
                            placeholder="Buscar por producto">
                 </div>
-                <div class="col-sm-4 col-md-3">
-                    <label for="estado" class="visually-hidden">Filtrar por estado</label>
-                    <select id="estado" name="estado" class="form-select">
-                        <option value="">Todos los estados</option>
-                        <option th:each="e : ${estados}" th:value="${e}" th:text="${e.descripcion}"
-                                th:selected="${e == estadoFiltro}">Estado</option>
-                    </select>
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search" aria-hidden="true"></i>Buscar</button>
-                    <a th:if="${buscar != null or estadoFiltro != null}" th:href="@{/transacciones}" class="btn btn-outline-secondary">Limpiar</a>
-                </div>
             </form>
-
-            <!-- En móvil cada fila se muestra como tarjeta (ver .tabla-tarjetas en estilos.css) -->
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 tabla-tarjetas">
-                    <thead>
-                    <tr>
-                        <th class="col-id">#</th>
-                        <th>Producto</th>
-                        <th>Vendedor</th>
-                        <th>Comprador</th>
-                        <th class="text-end">Monto</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acción</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="t : ${transacciones}">
-                        <td class="col-id numero text-muted" th:text="${t.id}">1</td>
-                        <td class="celda-principal">
-                            <a class="fw-semibold enlace-fila" th:href="@{/transacciones/{id}(id=${t.id})}" th:text="${t.producto}">Producto</a>
-                            <small class="text-muted d-block" th:text="${#temporals.format(t.fechaCreacion, 'dd/MM/yyyy')}">01/10/2026</small>
-                        </td>
-                        <td data-label="Vendedor" th:text="${t.vendedor.nombre}">Carlos Mena</td>
-                        <td data-label="Comprador" th:text="${t.comprador.nombre}">Ana Torres</td>
-                        <td data-label="Monto" class="text-end"><span th:replace="~{fragmentos/base :: dinero(${t.monto})}"></span></td>
-                        <td data-label="Estado"><span th:replace="~{fragmentos/base :: estado(${t.estado})}"></span></td>
-                        <td class="text-end celda-acciones">
-                            <a th:href="@{/transacciones/{id}(id=${t.id})}" class="btn btn-sm btn-outline-primary btn-accion"
-                               th:aria-label="'Ver el trato ' + ${t.producto}">Ver detalle</a>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(transacciones)}">
-                        <td colspan="7" class="celda-vacia lista-vacia">
-                            <span th:if="${buscar != null or estadoFiltro != null}">Ningún trato coincide con el filtro.</span>
-                            <span th:unless="${buscar != null or estadoFiltro != null}">
-                                Todavía no hay tratos.
-                                <a th:if="${esVendedorActual}" th:href="@{/transacciones/nueva}">Crear el primero</a>
-                            </span>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
-    </div>
+
+        <!-- En móvil cada fila se muestra como tarjeta (ver .tabla-tarjetas en estilos.css) -->
+        <div class="table-responsive">
+            <table class="table table-hover tabla tabla-tarjetas tabla-tratos">
+                <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th th:text="${esVendedorActual} ? 'Comprador' : (${esComprador} ? 'Vendedor' : 'Partes')">Partes</th>
+                    <th class="text-end">Monto</th>
+                    <th>Estado</th>
+                    <th>Próximo plazo</th>
+                    <th class="text-end"><span class="visually-hidden">Acción</span></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t : ${transacciones}">
+                    <td class="celda-principal">
+                        <a class="enlace-fila" th:href="@{/transacciones/{id}(id=${t.id})}" th:text="${#strings.replace(t.producto, '-', '‑')}">Producto</a>
+                        <span class="celda-secundaria numero"
+                              th:text="'#' + ${t.id} + ' · ' + ${#temporals.format(t.fechaCreacion, 'dd/MM/yyyy')}">#1 · 01/10/2026</span>
+                    </td>
+                    <td class="c-persona" th:attr="data-label=${esVendedorActual} ? 'Comprador' : (${esComprador} ? 'Vendedor' : 'Partes')">
+                        <th:block th:if="${esVendedorActual}"><span th:replace="~{fragmentos/base :: persona(${t.comprador.nombre}, null)}"></span></th:block>
+                        <th:block th:if="${esComprador}"><span th:replace="~{fragmentos/base :: persona(${t.vendedor.nombre}, null)}"></span></th:block>
+                        <th:block th:unless="${esVendedorActual or esComprador}"><span
+                              th:replace="~{fragmentos/base :: persona(${t.vendedor.nombre}, 'vende a ' + ${t.comprador.nombre})}"></span></th:block>
+                    </td>
+                    <td data-label="Monto" class="text-end fw-bold c-monto"><span th:replace="~{fragmentos/base :: dinero(${t.monto})}"></span></td>
+                    <td data-label="Estado" class="c-estado"><span th:replace="~{fragmentos/base :: estado(${t.estado})}"></span></td>
+                    <td data-label="Próximo plazo" class="c-plazo">
+                        <span th:if="${t.estado.name() == 'PAGADA' and t.fechaLimiteEnvio != null}" class="plazo"
+                              th:classappend="${t.fechaLimiteEnvio.isBefore(#temporals.createToday())} ? 'plazo-vencido'">
+                            <i class="bi bi-truck" aria-hidden="true"></i>
+                            <span th:text="'Envío hasta ' + ${#temporals.format(t.fechaLimiteEnvio, 'dd/MM')}">Envío hasta 08/10</span>
+                        </span>
+                        <span th:if="${t.estado.name() == 'ENVIADA' and t.fechaLimiteRevision != null}" class="plazo"
+                              th:classappend="${t.fechaLimiteRevision.isBefore(#temporals.createToday())} ? 'plazo-vencido'">
+                            <i class="bi bi-box-seam" aria-hidden="true"></i>
+                            <span th:text="'Revisión hasta ' + ${#temporals.format(t.fechaLimiteRevision, 'dd/MM')}">Revisión hasta 16/10</span>
+                        </span>
+                        <span th:if="${t.estado.name() == 'CREADA'}" class="plazo"><i class="bi bi-hourglass" aria-hidden="true"></i>Esperando pago</span>
+                        <span th:if="${t.estado.name() == 'EN_DISPUTA'}" class="plazo plazo-pronto"><i class="bi bi-pause-circle" aria-hidden="true"></i>Pausado por disputa</span>
+                        <span th:if="${t.estado.esFinal()}" class="plazo plazo-vacio">—</span>
+                    </td>
+                    <td class="text-end celda-acciones">
+                        <a th:href="@{/transacciones/{id}(id=${t.id})}" class="btn btn-sm btn-outline-secondary"
+                           th:aria-label="'Ver el trato ' + ${t.producto}">Ver <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(transacciones)}">
+                    <td colspan="6" class="celda-vacia">
+                        <div class="vacio">
+                            <i class="bi" th:classappend="${filtrado} ? 'bi-funnel' : 'bi-inbox'" aria-hidden="true"></i>
+                            <th:block th:if="${filtrado}">
+                                <strong>Ningún trato coincide con el filtro</strong>
+                                <a th:href="@{/transacciones}">Ver todos los tratos</a>
+                            </th:block>
+                            <th:block th:unless="${filtrado}">
+                                <strong>Todavía no hay tratos</strong>
+                                <span th:if="${esVendedorActual}">Crea un trato, comparte el pago con tu comprador y cobra cuando él confirme la entrega.
+                                    <a th:href="@{/transacciones/nueva}" class="d-block mt-2">Crear el primero</a></span>
+                                <span th:if="${esComprador}">Cuando un vendedor cree un trato contigo, aparecerá aquí para que lo pagues con protección.</span>
+                            </th:block>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </main>
+</div>
 
 </body>
 </html>

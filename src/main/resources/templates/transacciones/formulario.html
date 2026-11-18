@@ -1,42 +1,56 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos/base :: head(${transaccion.id == null} ? 'Nuevo trato' : 'Editar trato')}"></head>
-<body>
+<body class="app">
 
-<nav th:replace="~{fragmentos/base :: navbar('nuevo')}"></nav>
+<th:block th:replace="~{fragmentos/base :: navbar(${transaccion.id == null} ? 'nuevo' : 'tratos')}"></th:block>
 
-<main class="container py-4">
-    <div class="row justify-content-center">
+<div class="contenido-envoltura">
+<main class="contenido contenido-angosto">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+
+    <ol class="migas" aria-label="Ubicación">
+        <li><a th:href="@{/transacciones}">Tratos</a></li>
+        <li th:if="${transaccion.id != null}"><a th:href="@{/transacciones/{id}(id=${transaccion.id})}" th:text="'Trato #' + ${transaccion.id}">Trato #1</a></li>
+        <li aria-current="page" th:text="${transaccion.id == null} ? 'Nuevo trato' : 'Editar'">Nuevo trato</li>
+    </ol>
+    <header class="cabecera">
+        <div>
+            <h1 class="titulo" th:text="${transaccion.id == null} ? 'Nuevo trato' : 'Editar trato #' + ${transaccion.id}">Nuevo trato</h1>
+            <p class="subtitulo">Puedes editarlo o eliminarlo mientras el comprador no lo pague.</p>
+        </div>
+    </header>
+
+    <div class="row g-4">
         <div class="col-lg-7">
-            <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
-            <div class="card">
-                <div class="card-body p-4">
-                    <h1 class="titulo mb-1" th:text="${transaccion.id == null} ? 'Nuevo trato' : 'Editar trato #' + ${transaccion.id}">Trato</h1>
-                    <p class="subtitulo mb-4">Puedes editarlo o eliminarlo mientras el comprador no lo pague.</p>
+            <!-- El mismo formulario crea y edita: si el id oculto viene vacío, se crea.
+                 Cada error se conecta a su campo con aria-describedby para los lectores de pantalla. -->
+            <form th:action="@{/transacciones/guardar}" th:object="${transaccion}" method="post" novalidate class="panel">
+                <div class="panel-cuerpo">
+                    <input type="hidden" th:field="*{id}">
 
-                    <!-- El mismo formulario crea y edita: si el id oculto viene vacío, se crea.
-                         Cada error se conecta a su campo con aria-describedby para los lectores de pantalla. -->
-                    <form th:action="@{/transacciones/guardar}" th:object="${transaccion}" method="post" novalidate>
-                        <input type="hidden" th:field="*{id}">
-
+                    <fieldset class="grupo-campos">
+                        <legend>Producto</legend>
                         <div class="mb-3">
-                            <label for="producto" class="form-label">Producto *</label>
-                            <input type="text" th:field="*{producto}" class="form-control"
+                            <label for="producto" class="form-label">Nombre del producto *</label>
+                            <input type="text" th:field="*{producto}" class="form-control" placeholder="Bicicleta aro 29"
                                    th:classappend="${#fields.hasErrors('producto')} ? 'is-invalid'"
                                    th:aria-invalid="${#fields.hasErrors('producto')} ? 'true' : null"
                                    th:aria-describedby="${#fields.hasErrors('producto')} ? 'producto-error' : null">
                             <div id="producto-error" class="invalid-feedback" th:errors="*{producto}"></div>
                         </div>
-
                         <div class="mb-3">
                             <label for="descripcion" class="form-label">Descripción</label>
-                            <textarea th:field="*{descripcion}" rows="2" class="form-control"
+                            <textarea th:field="*{descripcion}" rows="2" class="form-control" placeholder="Estado, color, talla, accesorios incluidos"
                                       th:classappend="${#fields.hasErrors('descripcion')} ? 'is-invalid'"
                                       th:aria-invalid="${#fields.hasErrors('descripcion')} ? 'true' : null"
                                       th:aria-describedby="${#fields.hasErrors('descripcion')} ? 'descripcion-error' : null"></textarea>
                             <div id="descripcion-error" class="invalid-feedback" th:errors="*{descripcion}"></div>
                         </div>
+                    </fieldset>
 
+                    <fieldset class="grupo-campos">
+                        <legend>Condiciones</legend>
                         <div class="row">
                             <div class="col-sm-6 mb-3">
                                 <label for="monto" class="form-label">Monto ($) *</label>
@@ -59,31 +73,66 @@
                         </div>
 
                         <!-- Referencia a otra tabla: el comprador se escoge de la lista de usuarios con rol Comprador -->
-                        <div class="mb-4">
+                        <div class="mb-2">
                             <label for="compradorId" class="form-label">Comprador *</label>
                             <select id="compradorId" name="compradorId" class="form-select"
                                     th:classappend="${#fields.hasErrors('comprador')} ? 'is-invalid'"
                                     th:aria-invalid="${#fields.hasErrors('comprador')} ? 'true' : null"
                                     th:aria-describedby="${#fields.hasErrors('comprador')} ? 'comprador-error' : null">
-                                <option value="">-- Escoge el comprador --</option>
+                                <option value="">Escoge el comprador</option>
                                 <option th:each="c : ${compradores}" th:value="${c.id}"
                                         th:text="${c.nombre} + ' (' + ${c.username} + ')'"
                                         th:selected="${c.id == compradorId}">Comprador</option>
                             </select>
                             <div id="comprador-error" class="invalid-feedback" th:errors="*{comprador}"></div>
                         </div>
+                    </fieldset>
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <a th:href="${transaccion.id == null} ? @{/transacciones} : @{/transacciones/{id}(id=${transaccion.id})}"
-                               class="btn btn-outline-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                        </div>
-                    </form>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a th:href="${transaccion.id == null} ? @{/transacciones} : @{/transacciones/{id}(id=${transaccion.id})}"
+                           class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2" aria-hidden="true"></i>Guardar trato</button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
+
+        <!-- Vista previa: cuánto recibirá el vendedor. La cuenta definitiva la hace el servidor al liberar. -->
+        <aside class="col-lg-5">
+            <section class="panel" aria-labelledby="titulo-cobro">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-cobro" class="panel-titulo">Lo que vas a cobrar</h2>
+                </div>
+                <div class="panel-cuerpo">
+                    <table class="tabla-liquidacion">
+                        <caption class="visually-hidden">Vista previa del cobro del vendedor</caption>
+                        <tr><td>Monto que paga el comprador</td><td id="vistaMonto">$ 0,00</td></tr>
+                        <tr><td>Comisión de TratoSeguro (3 %)</td><td id="vistaComision">$ 0,00</td></tr>
+                        <tr class="total"><td>Recibes cuando el comprador confirma</td><td id="vistaNeto">$ 0,00</td></tr>
+                    </table>
+                    <p class="small text-muted mt-3 mb-0">Es una vista previa. El dinero queda retenido desde el pago y se te libera cuando el comprador confirma la recepción o vence su plazo de revisión.</p>
+                </div>
+            </section>
+        </aside>
     </div>
 </main>
+</div>
 
+<script>
+    // Vista previa del cobro (se calcula en centavos para no perder precisión)
+    (function () {
+        const campo = document.getElementById('monto');
+        const formato = c => '$ ' + (c / 100).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        function actualizar() {
+            const monto = Math.max(0, Math.round((parseFloat(campo.value) || 0) * 100));
+            const comision = Math.round(monto * 3 / 100);
+            document.getElementById('vistaMonto').textContent = formato(monto);
+            document.getElementById('vistaComision').textContent = formato(comision);
+            document.getElementById('vistaNeto').textContent = formato(monto - comision);
+        }
+        campo.addEventListener('input', actualizar);
+        actualizar();
+    })();
+</script>
 </body>
 </html>
