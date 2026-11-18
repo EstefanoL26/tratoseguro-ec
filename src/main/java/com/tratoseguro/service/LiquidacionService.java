@@ -5,6 +5,7 @@ import com.tratoseguro.model.Movimiento;
 import com.tratoseguro.model.TipoMovimiento;
 import com.tratoseguro.model.Transaccion;
 import com.tratoseguro.repository.MovimientoRepository;
+import com.tratoseguro.util.Dinero;
 import com.tratoseguro.util.Reloj;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +43,7 @@ public class LiquidacionService {
         BigDecimal r = (reembolso == null ? BigDecimal.ZERO : reembolso).setScale(2, RoundingMode.HALF_UP);
 
         if (r.compareTo(BigDecimal.ZERO) < 0 || r.compareTo(m) > 0) {
-            throw new ReglaNegocioException("El reembolso debe estar entre $ 0,00 y el monto retenido ($ " + m + ").");
+            throw new ReglaNegocioException("El reembolso debe estar entre $ 0,00 y el monto retenido (" + Dinero.formatear(m) + ").");
         }
 
         BigDecimal base = m.subtract(r);

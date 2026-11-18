@@ -10,6 +10,7 @@ import com.tratoseguro.model.Transaccion;
 import com.tratoseguro.model.Usuario;
 import com.tratoseguro.repository.DisputaRepository;
 import com.tratoseguro.repository.EvidenciaRepository;
+import com.tratoseguro.util.Dinero;
 import com.tratoseguro.util.Reloj;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -66,7 +67,7 @@ public class DisputaService {
             guardarEvidencia(disputa, comprador, evidencia, enlace);
         }
         notificacionService.notificarMediadores(transaccion,
-                "Nueva disputa en \"" + transaccion.getProducto() + "\" ($ " + transaccion.getMonto() + "). Revisa la evidencia.");
+                "Nueva disputa en \"" + transaccion.getProducto() + "\" (" + Dinero.formatear(transaccion.getMonto()) + "). Revisa la evidencia.");
         return disputa;
     }
 
@@ -139,7 +140,7 @@ public class DisputaService {
 
         EstadoTransaccion nuevo = reembolso.signum() == 0 ? EstadoTransaccion.LIBERADA : EstadoTransaccion.REEMBOLSADA;
         String motivo = (viaRapida ? "Vía rápida por fraude: " : "Decisión del mediador: ") + decisionFinal.getDescripcion()
-                + " (reembolso $ " + liquidacion.getReembolso() + ")";
+                + " (reembolso " + Dinero.formatear(liquidacion.getReembolso()) + ")";
         transaccionService.cambiarEstado(transaccion, nuevo, mediador, motivo);
         return liquidacion;
     }
@@ -156,7 +157,7 @@ public class DisputaService {
             default:
                 // Reembolso parcial: tiene que ser mayor que 0 y menor que el monto retenido
                 if (pedido == null || pedido.signum() <= 0 || pedido.compareTo(monto) >= 0) {
-                    throw new ReglaNegocioException("En un reembolso parcial el monto debe ser mayor a $ 0,00 y menor a $ " + monto + ".");
+                    throw new ReglaNegocioException("En un reembolso parcial el monto debe ser mayor a $ 0,00 y menor a " + Dinero.formatear(monto) + ".");
                 }
                 if (pedido.scale() > 2) {
                     throw new ReglaNegocioException("El reembolso admite máximo 2 decimales.");

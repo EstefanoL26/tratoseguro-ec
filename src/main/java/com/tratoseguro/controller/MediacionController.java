@@ -8,6 +8,7 @@ import com.tratoseguro.model.Transaccion;
 import com.tratoseguro.service.DisputaService;
 import com.tratoseguro.service.LiquidacionService;
 import com.tratoseguro.service.UsuarioService;
+import com.tratoseguro.util.Dinero;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -83,8 +84,9 @@ public class MediacionController {
                            Authentication authentication, RedirectAttributes flash) {
         Liquidacion liquidacion = disputaService.resolver(id, usuarioService.buscarPorUsername(authentication.getName()),
                 decision, reembolso, viaRapida, justificacion);
-        flash.addFlashAttribute("mensaje", "Disputa resuelta: reembolso $ " + liquidacion.getReembolso()
-                + ", comisión $ " + liquidacion.getComision() + ", neto al vendedor $ " + liquidacion.getNetoVendedor() + ".");
+        flash.addFlashAttribute("mensaje", "Disputa resuelta: reembolso " + Dinero.formatear(liquidacion.getReembolso())
+                + ", comisión " + Dinero.formatear(liquidacion.getComision())
+                + ", neto al vendedor " + Dinero.formatear(liquidacion.getNetoVendedor()) + ".");
         return "redirect:/disputas";
     }
 }

@@ -55,7 +55,7 @@ Los datos de ejemplo incluyen un trato en cada situación del core: creado, paga
 ./mvnw test
 ```
 
-41 pruebas: validador de cédula, máquina de estados, días hábiles (ejemplo del documento de análisis),
+42 pruebas: validador de cédula, formato de dinero, máquina de estados, días hábiles (ejemplo del documento de análisis),
 liquidación (los tres casos de la tabla), flujos completos del core, disputas, vía rápida, plazos,
 permisos por rol y renderizado de cada pantalla.
 
