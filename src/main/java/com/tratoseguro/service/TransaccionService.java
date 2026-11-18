@@ -272,7 +272,7 @@ public class TransaccionService {
         transaccion.setMetodoPago(metodo);
         transaccion.setFechaPago(ahora);
         transaccion.setFechaLimiteEnvio(diasHabilesService.sumarDiasHabiles(ahora.toLocalDate(), transaccion.getDiasEntrega()));
-        cambiarEstado(transaccion, EstadoTransaccion.PAGADA, comprador, "Pago recibido (" + metodo.getDescripcion() + ")");
+        cambiarEstado(transaccion, EstadoTransaccion.PAGADA, comprador, "Pago recibido: " + metodo.getDescripcion());
         liquidacionService.registrarMovimiento(transaccion, TipoMovimiento.RETENCION, transaccion.getMonto(), ahora, referencia);
     }
 
