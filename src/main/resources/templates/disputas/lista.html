@@ -1,83 +1,135 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos/base :: head('Disputas')}"></head>
-<body>
+<body class="app">
 
-<nav th:replace="~{fragmentos/base :: navbar('disputas')}"></nav>
+<th:block th:replace="~{fragmentos/base :: navbar('disputas')}"></th:block>
 
-<main class="container py-4">
+<div class="contenido-envoltura">
+<main class="contenido">
     <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
 
-    <div class="encabezado-pagina">
+    <header class="cabecera">
         <div>
-            <h1 class="titulo mb-0">Disputas</h1>
-            <p class="subtitulo mb-0">Revisa la evidencia de ambas partes y decide cómo se reparte el dinero retenido.</p>
+            <ol class="migas" aria-label="Ubicación">
+                <li><a th:href="@{/transacciones}">Inicio</a></li>
+                <li aria-current="page">Disputas</li>
+            </ol>
+            <h1 class="titulo">Disputas</h1>
+            <p class="subtitulo">Revisa la evidencia de ambas partes y decide cómo se reparte el dinero retenido.</p>
         </div>
-    </div>
+    </header>
 
-    <section class="card card-listado mb-4" aria-labelledby="titulo-pendientes">
-        <div class="card-body">
-            <h2 id="titulo-pendientes" class="ficha-titulo">Pendientes (<span class="numero" th:text="${#lists.size(pendientes)}">1</span>)</h2>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 tabla-tarjetas">
-                    <thead>
-                    <tr><th>Trato</th><th>Motivo</th><th class="text-end">Monto</th><th>Abierta</th><th class="text-end">Acción</th></tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="d : ${pendientes}">
-                        <td class="celda-principal">
-                            <span class="fw-semibold" th:text="${d.transaccion.producto}">Consola</span>
-                            <small class="text-muted d-block" th:text="${d.transaccion.comprador.nombre} + ' vs. ' + ${d.transaccion.vendedor.nombre}">Ana vs. Carlos</small>
-                        </td>
-                        <td data-label="Motivo" th:text="${d.motivo}">Motivo</td>
-                        <td data-label="Monto" class="text-end"><span th:replace="~{fragmentos/base :: dinero(${d.transaccion.monto})}"></span></td>
-                        <td data-label="Abierta" class="numero" th:text="${#temporals.format(d.fechaApertura, 'dd/MM/yyyy')}">01/10/2026</td>
-                        <td class="text-end celda-acciones">
-                            <a th:href="@{/disputas/{id}/resolver(id=${d.id})}" class="btn btn-sm btn-primary btn-accion">Resolver</a>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(pendientes)}">
-                        <td colspan="5" class="celda-vacia lista-vacia">No hay disputas pendientes.</td>
-                    </tr>
-                    </tbody>
-                </table>
+    <section class="kpis" aria-label="Resumen de disputas">
+        <div class="kpi" th:classappend="${#lists.isEmpty(pendientes)} ? 'kpi-verde' : 'kpi-rojo'">
+            <span class="kpi-icono"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${#lists.size(pendientes)}">1</span>
+                <span class="kpi-etiqueta">Esperan tu decisión</span>
+            </div>
+        </div>
+        <div class="kpi kpi-destacado">
+            <span class="kpi-icono"><i class="bi bi-safe" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor"
+                      th:text="'$ ' + ${#numbers.formatDecimal(#lists.isEmpty(pendientes) ? 0 : #aggregates.sum(pendientes.![transaccion.monto]), 1, 'POINT', 2, 'COMMA')}">$ 450,00</span>
+                <span class="kpi-etiqueta">Retenido en disputas abiertas</span>
+            </div>
+        </div>
+        <div class="kpi kpi-turquesa">
+            <span class="kpi-icono"><i class="bi bi-check2-square" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${#lists.size(resueltas)}">2</span>
+                <span class="kpi-etiqueta">Resueltas</span>
+            </div>
+        </div>
+        <div class="kpi kpi-ambar">
+            <span class="kpi-icono"><i class="bi bi-lightning-charge" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="${#lists.size(resueltas.?[viaRapida])}">0</span>
+                <span class="kpi-etiqueta">Por vía rápida (fraude)</span>
             </div>
         </div>
     </section>
 
-    <section class="card card-listado" aria-labelledby="titulo-resueltas">
-        <div class="card-body">
-            <h2 id="titulo-resueltas" class="ficha-titulo">Resueltas</h2>
-            <div class="table-responsive">
-                <table class="table align-middle mb-0 tabla-tarjetas">
-                    <thead>
-                    <tr><th>Trato</th><th>Decisión</th><th class="text-end">Reembolso</th><th>Resuelta</th><th class="text-end">Acción</th></tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="d : ${resueltas}">
-                        <td class="celda-principal">
-                            <span class="fw-semibold" th:text="${d.transaccion.producto}">Chaqueta</span>
-                            <small class="text-muted d-block" th:text="${d.transaccion.comprador.nombre} + ' vs. ' + ${d.transaccion.vendedor.nombre}">Ana vs. Carlos</small>
-                        </td>
-                        <td data-label="Decisión">
-                            <span th:text="${d.decision.descripcion}">Reembolso parcial</span>
-                            <small th:if="${d.viaRapida}" class="d-block text-muted">Vía rápida por fraude</small>
-                        </td>
-                        <td data-label="Reembolso" class="text-end"><span th:replace="~{fragmentos/base :: dinero(${d.reembolso})}"></span></td>
-                        <td data-label="Resuelta" class="numero" th:text="${#temporals.format(d.fechaResolucion, 'dd/MM/yyyy')}">02/10/2026</td>
-                        <td class="text-end celda-acciones">
-                            <a th:href="@{/transacciones/{id}(id=${d.transaccion.id})}" class="btn btn-sm btn-outline-primary btn-accion">Ver trato</a>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(resueltas)}">
-                        <td colspan="5" class="celda-vacia lista-vacia">Todavía no hay disputas resueltas.</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
+    <section class="panel" aria-labelledby="titulo-pendientes">
+        <div class="panel-cabecera">
+            <h2 id="titulo-pendientes" class="panel-titulo">Pendientes <span class="cuenta" th:text="${#lists.size(pendientes)}">1</span></h2>
+            <p class="panel-nota">Mientras estén abiertas, el dinero sigue retenido y los plazos están pausados.</p>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover tabla tabla-tarjetas">
+                <thead>
+                <tr><th>Trato</th><th>Motivo</th><th class="text-end">Monto</th><th>Abierta</th><th class="text-end"><span class="visually-hidden">Acción</span></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="d : ${pendientes}">
+                    <td class="celda-principal">
+                        <span class="fw-bold text-body" th:text="${d.transaccion.producto}">Consola</span>
+                        <span class="celda-secundaria" th:text="${d.transaccion.comprador.nombre} + ' vs. ' + ${d.transaccion.vendedor.nombre}">Ana vs. Carlos</span>
+                    </td>
+                    <td data-label="Motivo" class="text-wrap" style="max-width: 28rem" th:text="${d.motivo}">Motivo</td>
+                    <td data-label="Monto" class="text-end fw-bold"><span th:replace="~{fragmentos/base :: dinero(${d.transaccion.monto})}"></span></td>
+                    <td data-label="Abierta" class="numero" th:text="${#temporals.format(d.fechaApertura, 'dd/MM/yyyy')}">01/10/2026</td>
+                    <td class="text-end celda-acciones">
+                        <a th:href="@{/disputas/{id}/resolver(id=${d.id})}" class="btn btn-sm btn-primary">Resolver <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(pendientes)}">
+                    <td colspan="5" class="celda-vacia">
+                        <div class="vacio">
+                            <i class="bi bi-emoji-smile" aria-hidden="true"></i>
+                            <strong>No hay disputas pendientes</strong>
+                            Cuando un comprador abra una disputa aparecerá aquí con su evidencia.
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-resueltas">
+        <div class="panel-cabecera">
+            <h2 id="titulo-resueltas" class="panel-titulo">Resueltas</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover tabla tabla-tarjetas">
+                <thead>
+                <tr><th>Trato</th><th>Decisión</th><th class="text-end">Reembolso</th><th>Resuelta</th><th class="text-end"><span class="visually-hidden">Acción</span></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="d : ${resueltas}">
+                    <td class="celda-principal">
+                        <span class="fw-bold text-body" th:text="${d.transaccion.producto}">Chaqueta</span>
+                        <span class="celda-secundaria" th:text="${d.transaccion.comprador.nombre} + ' vs. ' + ${d.transaccion.vendedor.nombre}">Ana vs. Carlos</span>
+                    </td>
+                    <td data-label="Decisión">
+                        <span class="etiqueta"
+                              th:classappend="${d.decision.name() == 'PAGO_AL_VENDEDOR'} ? 'etiqueta-verde' : (${d.decision.name() == 'REEMBOLSO_TOTAL'} ? 'etiqueta-ambar' : 'etiqueta-azul')"
+                              th:text="${d.decision.descripcion}">Reembolso parcial</span>
+                        <span th:if="${d.viaRapida}" class="etiqueta etiqueta-rojo"><i class="bi bi-lightning-charge" aria-hidden="true"></i>Vía rápida</span>
+                    </td>
+                    <td data-label="Reembolso" class="text-end fw-bold"><span th:replace="~{fragmentos/base :: dinero(${d.reembolso})}"></span></td>
+                    <td data-label="Resuelta" class="numero" th:text="${#temporals.format(d.fechaResolucion, 'dd/MM/yyyy')}">02/10/2026</td>
+                    <td class="text-end celda-acciones">
+                        <a th:href="@{/transacciones/{id}(id=${d.transaccion.id})}" class="btn btn-sm btn-outline-secondary">Ver trato <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(resueltas)}">
+                    <td colspan="5" class="celda-vacia">
+                        <div class="vacio">
+                            <i class="bi bi-archive" aria-hidden="true"></i>
+                            <strong>Todavía no hay disputas resueltas</strong>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </main>
+</div>
 
 </body>
 </html>

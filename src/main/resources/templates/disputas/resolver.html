@@ -1,53 +1,79 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos/base :: head('Resolver disputa')}"></head>
-<body>
+<body class="app">
 
-<nav th:replace="~{fragmentos/base :: navbar('disputas')}"></nav>
+<th:block th:replace="~{fragmentos/base :: navbar('disputas')}"></th:block>
 
-<main class="container py-4">
+<div class="contenido-envoltura">
+<main class="contenido">
     <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
 
-    <a th:href="@{/disputas}" class="d-inline-block mb-3 small"><i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a las disputas</a>
+    <ol class="migas" aria-label="Ubicación">
+        <li><a th:href="@{/disputas}">Disputas</a></li>
+        <li aria-current="page" th:text="'Trato #' + ${t.id}">Trato #5</li>
+    </ol>
 
-    <div class="cabecera-trato">
+    <header class="cabecera-trato">
         <div>
-            <p class="subtitulo mb-1">Disputa del trato #<span th:text="${t.id}">5</span></p>
-            <h1 class="titulo mb-2" th:text="${t.producto}">Consola PlayStation 5</h1>
-            <p class="mb-0"><strong>Motivo:</strong> <span th:text="${disputa.motivo}">Motivo</span></p>
+            <div class="cabecera-trato-titulo">
+                <h1 class="titulo" th:text="${t.producto}">Consola PlayStation 5</h1>
+                <span th:replace="~{fragmentos/base :: estado(${t.estado})}"></span>
+            </div>
+            <div class="cabecera-meta">
+                <span><i class="bi bi-person" aria-hidden="true"></i><span th:text="${t.comprador.nombre} + ' reclama a ' + ${t.vendedor.nombre}">Ana Torres reclama a Carlos Mena</span></span>
+                <span><i class="bi bi-calendar3" aria-hidden="true"></i><span th:text="'Abierta el ' + ${#temporals.format(disputa.fechaApertura, 'dd/MM/yyyy HH:mm')}">Abierta el 01/10/2026</span></span>
+            </div>
         </div>
-        <div class="text-sm-end">
-            <p class="subtitulo mb-0">Monto retenido</p>
-            <p class="monto-grande mb-0" th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 450,00</p>
+        <div class="monto-protegido">
+            <span class="monto-protegido-etiqueta"><i class="bi bi-shield-lock" aria-hidden="true"></i>Monto retenido</span>
+            <p class="monto-grande" th:text="'$ ' + ${#numbers.formatDecimal(t.monto, 1, 'POINT', 2, 'COMMA')}">$ 450,00</p>
         </div>
+    </header>
+
+    <div class="aviso aviso-alerta mb-4">
+        <i class="bi bi-chat-left-quote" aria-hidden="true"></i>
+        <div><strong>Motivo del comprador:</strong> <span th:text="${disputa.motivo}">Motivo</span></div>
     </div>
 
     <!-- ---------- Evidencia de ambas partes, lado a lado ---------- -->
     <div class="row g-4 mb-4">
         <section class="col-md-6" aria-labelledby="titulo-comprador">
-            <div class="card h-100">
-                <div class="card-body p-4">
-                    <h2 id="titulo-comprador" class="ficha-titulo">Comprador: <span th:text="${t.comprador.nombre}">Ana Torres</span></h2>
+            <div class="panel h-100">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-comprador" class="panel-titulo">
+                        <span th:replace="~{fragmentos/base :: avatar(${t.comprador.nombre}, '')}"></span>
+                        <span>Comprador: <span th:text="${t.comprador.nombre}">Ana Torres</span></span>
+                    </h2>
+                    <span class="etiqueta" th:text="${#lists.size(evidenciasComprador)} + (${#lists.size(evidenciasComprador) == 1} ? ' prueba' : ' pruebas')">2 pruebas</span>
+                </div>
+                <div class="panel-cuerpo">
                     <p th:if="${#lists.isEmpty(evidenciasComprador)}" class="text-muted mb-0">No aportó evidencia.</p>
                     <div th:each="ev : ${evidenciasComprador}" class="evidencia">
-                        <p class="mb-1" th:text="${ev.descripcion}">Descripción</p>
-                        <span class="cuando" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span>
-                        <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow" class="ms-2">
-                            <i class="bi bi-paperclip" aria-hidden="true"></i> Ver archivo</a>
+                        <div class="evidencia-autor"><span class="numero" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span></div>
+                        <p th:text="${ev.descripcion}">Descripción</p>
+                        <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow">
+                            <i class="bi bi-paperclip" aria-hidden="true"></i>Ver archivo</a>
                     </div>
                 </div>
             </div>
         </section>
         <section class="col-md-6" aria-labelledby="titulo-vendedor">
-            <div class="card h-100">
-                <div class="card-body p-4">
-                    <h2 id="titulo-vendedor" class="ficha-titulo">Vendedor: <span th:text="${t.vendedor.nombre}">Carlos Mena</span></h2>
+            <div class="panel h-100">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-vendedor" class="panel-titulo">
+                        <span th:replace="~{fragmentos/base :: avatar(${t.vendedor.nombre}, '')}"></span>
+                        <span>Vendedor: <span th:text="${t.vendedor.nombre}">Carlos Mena</span></span>
+                    </h2>
+                    <span class="etiqueta" th:text="${#lists.size(evidenciasVendedor)} + (${#lists.size(evidenciasVendedor) == 1} ? ' prueba' : ' pruebas')">1 prueba</span>
+                </div>
+                <div class="panel-cuerpo">
                     <p th:if="${#lists.isEmpty(evidenciasVendedor)}" class="text-muted mb-0">No aportó evidencia.</p>
                     <div th:each="ev : ${evidenciasVendedor}" class="evidencia">
-                        <p class="mb-1" th:text="${ev.descripcion}">Descripción</p>
-                        <span class="cuando" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span>
-                        <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow" class="ms-2">
-                            <i class="bi bi-paperclip" aria-hidden="true"></i> Ver archivo</a>
+                        <div class="evidencia-autor"><span class="numero" th:text="${#temporals.format(ev.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span></div>
+                        <p th:text="${ev.descripcion}">Descripción</p>
+                        <a th:if="${ev.archivo}" th:href="${ev.archivo}" target="_blank" rel="noopener noreferrer nofollow">
+                            <i class="bi bi-paperclip" aria-hidden="true"></i>Ver archivo</a>
                     </div>
                 </div>
             </div>
@@ -59,17 +85,25 @@
           th:attr="data-monto=${t.monto}">
         <div class="row g-4">
             <section class="col-lg-7" aria-labelledby="titulo-decision">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <h2 id="titulo-decision" class="ficha-titulo">Decisión</h2>
-                        <fieldset class="mb-3">
+                <div class="panel">
+                    <div class="panel-cabecera">
+                        <h2 id="titulo-decision" class="panel-titulo">Decisión</h2>
+                    </div>
+                    <div class="panel-cuerpo">
+                        <fieldset class="opciones mb-3">
                             <legend class="visually-hidden">Escoge una decisión</legend>
-                            <div class="d-grid gap-2">
-                                <label th:each="d : ${decisiones}" class="opcion-decision">
-                                    <input class="form-check-input me-2" type="radio" name="decision" th:value="${d}" required>
-                                    <span th:text="${d.descripcion}">Decisión</span>
-                                </label>
-                            </div>
+                            <label th:each="d : ${decisiones}" class="opcion">
+                                <input class="form-check-input" type="radio" name="decision" th:value="${d}" required>
+                                <span class="opcion-icono">
+                                    <i class="bi" aria-hidden="true"
+                                       th:classappend="${d.name() == 'REEMBOLSO_TOTAL'} ? 'bi-arrow-counterclockwise' : (${d.name() == 'REEMBOLSO_PARCIAL'} ? 'bi-pie-chart' : 'bi-person-check')"></i>
+                                </span>
+                                <span class="opcion-texto">
+                                    <span class="opcion-nombre" th:text="${d.descripcion}">Decisión</span>
+                                    <span class="opcion-detalle"
+                                          th:text="${d.name() == 'REEMBOLSO_TOTAL'} ? 'Se devuelve todo al comprador; no hay comisión.' : (${d.name() == 'REEMBOLSO_PARCIAL'} ? 'Tú decides cuánto se devuelve; el resto va al vendedor menos 3 %.' : 'El vendedor cobra el monto menos la comisión de 3 %.')">Detalle</span>
+                                </span>
+                            </label>
                         </fieldset>
 
                         <div class="mb-3">
@@ -79,12 +113,14 @@
                             <div id="reembolso-ayuda" class="form-text">Mayor a $ 0,00 y menor al monto retenido.</div>
                         </div>
 
-                        <div class="form-check mb-3">
+                        <label class="opcion mb-3" for="viaRapida">
                             <input class="form-check-input" type="checkbox" id="viaRapida" name="viaRapida" value="true">
-                            <label class="form-check-label" for="viaRapida">
-                                <strong>Vía rápida:</strong> confirmo un fraude. Se omite la negociación y se reembolsa todo de inmediato.
-                            </label>
-                        </div>
+                            <span class="opcion-icono opcion-icono-rojo"><i class="bi bi-lightning-charge" aria-hidden="true"></i></span>
+                            <span class="opcion-texto">
+                                <span class="opcion-nombre">Vía rápida: confirmo un fraude</span>
+                                <span class="opcion-detalle">Se omite la negociación y se reembolsa todo de inmediato.</span>
+                            </span>
+                        </label>
 
                         <div class="mb-4">
                             <label for="justificacion" class="form-label">Justificación *</label>
@@ -103,24 +139,33 @@
 
             <!-- ---------- Liquidación: vista previa con verificación del cuadre ---------- -->
             <aside class="col-lg-5" aria-labelledby="titulo-liquidacion">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <h2 id="titulo-liquidacion" class="ficha-titulo">Liquidación</h2>
+                <div class="panel">
+                    <div class="panel-cabecera">
+                        <h2 id="titulo-liquidacion" class="panel-titulo">Liquidación</h2>
+                        <span class="etiqueta">Vista previa</span>
+                    </div>
+                    <div class="panel-cuerpo">
+                        <div class="reparto" aria-hidden="true">
+                            <span class="reparto-reembolso" id="barReembolso" style="flex-basis: 0%"></span>
+                            <span class="reparto-comision" id="barComision" style="flex-basis: 0%"></span>
+                            <span class="reparto-neto" id="barNeto" style="flex-basis: 0%"></span>
+                        </div>
                         <table class="tabla-liquidacion">
                             <caption class="visually-hidden">Vista previa del reparto del dinero retenido</caption>
-                            <tr><td>Reembolso al comprador</td><td id="liqReembolso">—</td></tr>
-                            <tr><td>Comisión (3 % de lo que no se reembolsa)</td><td id="liqComision">—</td></tr>
-                            <tr><td>Neto al vendedor</td><td id="liqNeto">—</td></tr>
+                            <tr><td><span class="leyenda reparto-reembolso" aria-hidden="true"></span>Reembolso al comprador</td><td id="liqReembolso">—</td></tr>
+                            <tr><td><span class="leyenda reparto-comision" aria-hidden="true"></span>Comisión (3 % de lo que no se reembolsa)</td><td id="liqComision">—</td></tr>
+                            <tr><td><span class="leyenda reparto-neto" aria-hidden="true"></span>Neto al vendedor</td><td id="liqNeto">—</td></tr>
                             <tr class="total"><td>Total</td><td id="liqTotal">—</td></tr>
                         </table>
-                        <p id="liqCuadre" class="mt-2 mb-2 text-muted" aria-live="polite">Escoge una decisión para ver el reparto.</p>
-                        <p class="small text-muted mb-0">Es una vista previa. Al guardar, el servidor vuelve a calcular con BigDecimal y rechaza la decisión si R + comisión + neto no es igual al monto retenido.</p>
+                        <p id="liqCuadre" class="mt-3 mb-2 text-muted" aria-live="polite">Escoge una decisión para ver el reparto.</p>
+                        <p class="small text-muted mb-0">Es una vista previa. Al guardar, el sistema vuelve a calcular el reparto y no acepta la decisión si reembolso, comisión y neto no suman el monto retenido.</p>
                     </div>
                 </div>
             </aside>
         </div>
     </form>
 </main>
+</div>
 
 <script>
     // Vista previa de la liquidación (la definitiva la calcula el servidor). Se trabaja en centavos para no perder precisión.
@@ -131,6 +176,7 @@
         const viaRapida = document.getElementById('viaRapida');
         const radios = form.querySelectorAll('input[name="decision"]');
         const formato = c => '$ ' + (c / 100).toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const ancho = (id, c) => { document.getElementById(id).style.flexBasis = (montoCentavos ? c * 100 / montoCentavos : 0) + '%'; };
 
         function decisionActual() {
             if (viaRapida.checked) return 'REEMBOLSO_TOTAL';
@@ -150,17 +196,21 @@
             if (decision === 'REEMBOLSO_TOTAL') reembolso = montoCentavos;
             if (decision === 'REEMBOLSO_PARCIAL') reembolso = Math.round((parseFloat(campoReembolso.value) || 0) * 100);
 
-            const base = montoCentavos - reembolso;
+            const valido = reembolso >= 0 && reembolso <= montoCentavos
+                && (decision !== 'REEMBOLSO_PARCIAL' || (reembolso > 0 && reembolso < montoCentavos));
+            const r = Math.min(Math.max(reembolso, 0), montoCentavos);
+            const base = montoCentavos - r;
             const comision = Math.round(base * 3 / 100);
             const neto = base - comision;
             document.getElementById('liqReembolso').textContent = formato(reembolso);
             document.getElementById('liqComision').textContent = formato(comision);
             document.getElementById('liqNeto').textContent = formato(neto);
             document.getElementById('liqTotal').textContent = formato(reembolso + comision + neto);
+            ancho('barReembolso', r);
+            ancho('barComision', comision);
+            ancho('barNeto', neto);
 
-            const valido = reembolso >= 0 && reembolso <= montoCentavos
-                && (decision !== 'REEMBOLSO_PARCIAL' || (reembolso > 0 && reembolso < montoCentavos));
-            cuadre.className = 'mt-2 mb-2 ' + (valido ? 'cuadre-ok' : 'cuadre-error');
+            cuadre.className = 'mt-3 mb-2 ' + (valido ? 'cuadre-ok' : 'cuadre-error');
             cuadre.textContent = valido ? 'Cuadra con el monto retenido de ' + formato(montoCentavos)
                                         : 'El reembolso parcial debe ser mayor a $ 0,00 y menor a ' + formato(montoCentavos);
         }

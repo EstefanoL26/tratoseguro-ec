@@ -1,19 +1,29 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos/base :: head('Finanzas')}"></head>
-<body>
+<body class="app">
 
-<nav th:replace="~{fragmentos/base :: navbar('finanzas')}"></nav>
+<th:block th:replace="~{fragmentos/base :: navbar('finanzas')}"></th:block>
 
-<main class="container py-4">
+<div class="contenido-envoltura">
+<main class="contenido"
+      th:with="sumaPartes=${enCustodia + liberado + reembolsado + comisiones},
+               cuadra=${retenido.compareTo(enCustodia + liberado + reembolsado + comisiones) == 0},
+               totalTratos=${porEstado.isEmpty() ? 0 : #aggregates.sum(porEstado.values()).intValue()},
+               mayor=${porEstado.isEmpty() ? 0 : #lists.sort(#lists.toList(porEstado.values()))[porEstado.size() - 1]}">
     <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
 
-    <div class="encabezado-pagina">
+    <header class="cabecera">
         <div>
-            <h1 class="titulo mb-0">Finanzas</h1>
-            <p class="subtitulo mb-0">
-                Contabilidad de la custodia ·
-                <span th:text="${stripeActivo} ? 'Stripe en modo de prueba' : 'Pagos simulados (Stripe no configurado)'">Pagos simulados</span>
+            <ol class="migas" aria-label="Ubicación">
+                <li><a th:href="@{/transacciones}">Inicio</a></li>
+                <li aria-current="page">Finanzas</li>
+            </ol>
+            <h1 class="titulo">Finanzas</h1>
+            <p class="subtitulo">
+                Contabilidad de la custodia al <span class="numero" th:text="${#temporals.format(hoy, 'dd/MM/yyyy')}">01/10/2026</span> ·
+                <span class="etiqueta" th:classappend="${stripeActivo} ? 'etiqueta-azul' : 'etiqueta-ambar'"
+                      th:text="${stripeActivo} ? 'Stripe en modo de prueba' : 'Pagos simulados (Stripe no configurado)'">Pagos simulados</span>
             </p>
         </div>
         <!-- Los plazos se revisan solos a las 6:00; este botón adelanta la revisión -->
@@ -22,72 +32,120 @@
                 <i class="bi bi-calendar-check" aria-hidden="true"></i>Revisar plazos vencidos ahora
             </button>
         </form>
-    </div>
+    </header>
 
-    <section class="card mb-4" aria-labelledby="titulo-resumen">
-        <div class="card-body p-4">
-            <h2 id="titulo-resumen" class="ficha-titulo">Resumen al <span th:text="${#temporals.format(hoy, 'dd/MM/yyyy')}">01/10/2026</span></h2>
-            <dl class="resumen-finanzas">
-                <div><dt>En custodia ahora</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(enCustodia, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
-                <div><dt>Retenido en total</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(retenido, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
-                <div><dt>Liberado a vendedores</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(liberado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
-                <div><dt>Reembolsado a compradores</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(reembolsado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
-                <div><dt>Comisiones (3 %)</dt><dd th:text="'$ ' + ${#numbers.formatDecimal(comisiones, 1, 'POINT', 2, 'COMMA')}">$ 0,00</dd></div>
-            </dl>
-            <p class="small text-muted mt-3 mb-0">
-                Regla de cuadre global: retenido = en custodia + liberado + reembolsado + comisiones
-                (<span class="numero" th:text="'$ ' + ${#numbers.formatDecimal(retenido, 1, 'POINT', 2, 'COMMA')}"></span> =
-                <span class="numero" th:text="'$ ' + ${#numbers.formatDecimal(enCustodia + liberado + reembolsado + comisiones, 1, 'POINT', 2, 'COMMA')}"></span>)
-                <span th:class="${retenido.compareTo(enCustodia + liberado + reembolsado + comisiones) == 0} ? 'cuadre-ok' : 'cuadre-error'"
-                      th:text="${retenido.compareTo(enCustodia + liberado + reembolsado + comisiones) == 0} ? '· Cuadra' : '· No cuadra'">· Cuadra</span>
-            </p>
+    <section class="kpis kpis-5" aria-label="Resumen de la custodia">
+        <div class="kpi kpi-destacado">
+            <span class="kpi-icono"><i class="bi bi-safe" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="'$ ' + ${#numbers.formatDecimal(enCustodia, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                <span class="kpi-etiqueta">En custodia ahora</span>
+            </div>
+        </div>
+        <div class="kpi">
+            <span class="kpi-icono"><i class="bi bi-box-arrow-in-down" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="'$ ' + ${#numbers.formatDecimal(retenido, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                <span class="kpi-etiqueta">Retenido en total</span>
+            </div>
+        </div>
+        <div class="kpi kpi-verde">
+            <span class="kpi-icono"><i class="bi bi-person-check" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="'$ ' + ${#numbers.formatDecimal(liberado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                <span class="kpi-etiqueta">Liberado a vendedores</span>
+            </div>
+        </div>
+        <div class="kpi kpi-ambar">
+            <span class="kpi-icono"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="'$ ' + ${#numbers.formatDecimal(reembolsado, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                <span class="kpi-etiqueta">Reembolsado a compradores</span>
+            </div>
+        </div>
+        <div class="kpi kpi-turquesa">
+            <span class="kpi-icono"><i class="bi bi-percent" aria-hidden="true"></i></span>
+            <div>
+                <span class="kpi-valor" th:text="'$ ' + ${#numbers.formatDecimal(comisiones, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                <span class="kpi-etiqueta">Comisiones (3 %)</span>
+            </div>
         </div>
     </section>
 
-    <div class="row g-4">
-        <section class="col-lg-4" aria-labelledby="titulo-estados">
-            <div class="card">
-                <div class="card-body p-4">
-                    <h2 id="titulo-estados" class="ficha-titulo">Tratos por estado</h2>
-                    <dl class="datos">
-                        <th:block th:each="par : ${porEstado}">
-                            <dt><span th:replace="~{fragmentos/base :: estado(${par.key})}"></span></dt>
-                            <dd class="numero fw-semibold" th:text="${par.value}">0</dd>
-                        </th:block>
-                    </dl>
+    <!-- Regla de cuadre global: retenido = en custodia + liberado + reembolsado + comisiones -->
+    <div class="sello" th:classappend="${cuadra} ? '' : 'sello-error'" role="status">
+        <i class="bi" th:classappend="${cuadra} ? 'bi-patch-check-fill' : 'bi-exclamation-octagon-fill'" aria-hidden="true"></i>
+        <div>
+            <strong th:text="${cuadra} ? 'Cuadra: todo el dinero retenido está explicado' : 'No cuadra: revisa los movimientos'">Cuadra</strong>
+            <div class="sello-ecuacion">
+                Retenido <span th:text="'$ ' + ${#numbers.formatDecimal(retenido, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>
+                = en custodia + liberado + reembolsado + comisiones
+                (<span th:text="'$ ' + ${#numbers.formatDecimal(sumaPartes, 1, 'POINT', 2, 'COMMA')}">$ 0,00</span>)
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <section class="col-xl-4" aria-labelledby="titulo-estados">
+            <div class="panel">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-estados" class="panel-titulo">Tratos por estado</h2>
+                    <span class="panel-nota" th:text="${totalTratos} + ' en total'">8 en total</span>
+                </div>
+                <div class="panel-cuerpo">
+                    <ul class="barras">
+                        <li th:each="par : ${porEstado}" class="barra-fila">
+                            <span><span th:replace="~{fragmentos/base :: estado(${par.key})}"></span></span>
+                            <span class="barra-pista" th:classappend="'estado-' + ${#strings.toLowerCase(par.key.name())}" aria-hidden="true">
+                                <span class="barra-relleno" th:style="'--valor:' + ${mayor > 0 ? par.value * 1.0 / mayor : 0}"></span>
+                            </span>
+                            <span class="barra-cantidad" th:text="${par.value}">0</span>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </section>
 
-        <section class="col-lg-8" aria-labelledby="titulo-movimientos">
-            <div class="card card-listado">
-                <div class="card-body p-4">
-                    <h2 id="titulo-movimientos" class="ficha-titulo">Últimos movimientos</h2>
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0 tabla-tarjetas">
-                            <thead>
-                            <tr><th>Trato</th><th>Tipo</th><th class="text-end">Monto</th><th>Fecha</th></tr>
-                            </thead>
-                            <tbody>
-                            <tr th:each="m : ${movimientos}">
-                                <td class="celda-principal">
-                                    <a th:href="@{/transacciones/{id}(id=${m.transaccion.id})}" th:text="${m.transaccion.producto}">Producto</a>
-                                </td>
-                                <td data-label="Tipo" th:text="${m.tipo.descripcion}">Retención</td>
-                                <td data-label="Monto" class="text-end"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
-                                <td data-label="Fecha" class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(movimientos)}">
-                                <td colspan="4" class="celda-vacia lista-vacia">Todavía no hay movimientos.</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+        <section class="col-xl-8" aria-labelledby="titulo-movimientos">
+            <div class="panel h-100">
+                <div class="panel-cabecera">
+                    <h2 id="titulo-movimientos" class="panel-titulo">Últimos movimientos</h2>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover tabla tabla-tarjetas">
+                        <thead>
+                        <tr><th>Trato</th><th>Tipo</th><th class="text-end">Monto</th><th>Fecha</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="m : ${movimientos}">
+                            <td class="celda-principal">
+                                <a class="enlace-fila texto-recortado" th:href="@{/transacciones/{id}(id=${m.transaccion.id})}" th:title="${m.transaccion.producto}" th:text="${m.transaccion.producto}">Producto</a>
+                            </td>
+                            <td data-label="Tipo">
+                                <span class="etiqueta"
+                                      th:classappend="${m.tipo.name() == 'RETENCION'} ? 'etiqueta-azul' : (${m.tipo.name() == 'LIBERACION'} ? 'etiqueta-verde' : (${m.tipo.name() == 'COMISION'} ? 'etiqueta-turquesa' : 'etiqueta-ambar'))"
+                                      th:text="${m.tipo.descripcion}">Retención</span>
+                            </td>
+                            <td data-label="Monto" class="text-end fw-bold"><span th:replace="~{fragmentos/base :: dinero(${m.monto})}"></span></td>
+                            <td data-label="Fecha" class="numero" th:text="${#temporals.format(m.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(movimientos)}">
+                            <td colspan="4" class="celda-vacia">
+                                <div class="vacio">
+                                    <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                                    <strong>Todavía no hay movimientos</strong>
+                                    El primero aparece cuando un comprador paga un trato.
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
     </div>
 </main>
+</div>
 
 </body>
 </html>

@@ -1,46 +1,62 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos/base :: head('Notificaciones')}"></head>
-<body>
+<body class="app">
 
-<nav th:replace="~{fragmentos/base :: navbar('notificaciones')}"></nav>
+<th:block th:replace="~{fragmentos/base :: navbar('notificaciones')}"></th:block>
 
-<main class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
+<div class="contenido-envoltura">
+<main class="contenido contenido-angosto">
+    <th:block th:replace="~{fragmentos/base :: alertas}"></th:block>
 
-            <div class="encabezado-pagina">
-                <div>
-                    <h1 class="titulo mb-0">Notificaciones</h1>
-                    <p class="subtitulo mb-0">Avisos internos de tus tratos (no se envían correos ni SMS).</p>
-                </div>
-                <form th:if="${notificacionesNoLeidas > 0}" th:action="@{/notificaciones/leidas}" method="post">
-                    <button type="submit" class="btn btn-outline-primary"><i class="bi bi-check2-all" aria-hidden="true"></i>Marcar todas como leídas</button>
-                </form>
-            </div>
+    <header class="cabecera">
+        <div>
+            <ol class="migas" aria-label="Ubicación">
+                <li><a th:href="@{/transacciones}">Inicio</a></li>
+                <li aria-current="page">Notificaciones</li>
+            </ol>
+            <h1 class="titulo">Notificaciones</h1>
+            <p class="subtitulo">Avisos internos de tus tratos (no se envían correos ni SMS).</p>
+        </div>
+        <form th:if="${notificacionesNoLeidas > 0}" th:action="@{/notificaciones/leidas}" method="post">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-check2-all" aria-hidden="true"></i>Marcar todas como leídas</button>
+        </form>
+    </header>
 
-            <div class="card">
-                <div class="card-body p-4">
-                    <p th:if="${#lists.isEmpty(notificaciones)}" class="lista-vacia mb-0">No tienes notificaciones.</p>
-                    <ul class="lista-notificaciones" th:unless="${#lists.isEmpty(notificaciones)}">
-                        <li th:each="n : ${notificaciones}" th:classappend="${n.leida} ? 'leida'">
-                            <span class="punto-no-leida" aria-hidden="true"></span>
-                            <div>
-                                <span class="visually-hidden" th:unless="${n.leida}">Sin leer:</span>
-                                <span th:text="${n.mensaje}">Mensaje</span>
-                                <div class="small">
-                                    <span class="text-muted numero" th:text="${#temporals.format(n.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span>
-                                    <a th:if="${n.transaccion != null}" class="ms-2" th:href="@{/transacciones/{id}(id=${n.transaccion.id})}">Ver trato</a>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+    <section class="panel" aria-labelledby="titulo-avisos">
+        <div class="panel-cabecera">
+            <h2 id="titulo-avisos" class="panel-titulo">Avisos
+                <span th:if="${notificacionesNoLeidas > 0}" class="cuenta" th:text="${notificacionesNoLeidas}">3</span></h2>
+            <span class="panel-nota" th:text="${notificacionesNoLeidas > 0} ? ${notificacionesNoLeidas} + ' sin leer' : 'Todo leído'">3 sin leer</span>
+        </div>
+
+        <div th:if="${#lists.isEmpty(notificaciones)}" class="panel-cuerpo">
+            <div class="vacio py-4">
+                <i class="bi bi-bell-slash" aria-hidden="true"></i>
+                <strong>No tienes notificaciones</strong>
+                Te avisaremos aquí cuando alguien pague, envíe, confirme o abra una disputa en tus tratos.
             </div>
         </div>
-    </div>
+
+        <ul class="notificaciones" th:unless="${#lists.isEmpty(notificaciones)}">
+            <li th:each="n : ${notificaciones}" class="notificacion" th:classappend="${n.leida} ? '' : 'sin-leer'">
+                <span class="notificacion-icono" aria-hidden="true">
+                    <i class="bi" th:classappend="${n.transaccion != null} ? 'bi-arrow-left-right' : 'bi-bell'"></i>
+                </span>
+                <div>
+                    <span class="visually-hidden" th:unless="${n.leida}">Sin leer:</span>
+                    <span class="notificacion-texto" th:text="${n.mensaje}">Mensaje</span>
+                    <div class="notificacion-pie">
+                        <span class="numero" th:text="${#temporals.format(n.fecha, 'dd/MM/yyyy HH:mm')}">01/10/2026</span>
+                        <a th:if="${n.transaccion != null}" th:href="@{/transacciones/{id}(id=${n.transaccion.id})}"
+                           th:text="'Ver ' + ${n.transaccion.producto}">Ver trato</a>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </section>
 </main>
+</div>
 
 </body>
 </html>
