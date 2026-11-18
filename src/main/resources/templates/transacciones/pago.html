@@ -42,6 +42,57 @@
                     </ol>
 
                     <form th:action="@{/transacciones/{id}/pagar(id=${t.id})}" method="post">
+                        <!-- Métodos de pago. Por ahora solo funciona la tarjeta; los demás son de muestra
+                             (se ven deshabilitados y el servidor no los recibe). -->
+                        <fieldset class="metodos mb-4">
+                            <legend class="ficha-titulo">Método de pago</legend>
+
+                            <label class="metodo">
+                                <input class="form-check-input" type="radio" name="metodo" value="TARJETA" checked>
+                                <i class="bi bi-credit-card metodo-icono" aria-hidden="true"></i>
+                                <span class="metodo-texto">
+                                    <span class="metodo-nombre">Tarjeta de crédito o débito</span>
+                                    <span class="metodo-detalle" th:text="${stripeActivo} ? 'Visa, Mastercard o Diners. Se procesa con Stripe.' : 'Visa, Mastercard o Diners. En este servidor el pago se simula.'">Visa, Mastercard o Diners. Se procesa con Stripe.</span>
+                                </span>
+                            </label>
+
+                            <label class="metodo metodo-inactivo">
+                                <input class="form-check-input" type="radio" name="metodo" value="TRANSFERENCIA" disabled>
+                                <i class="bi bi-bank metodo-icono" aria-hidden="true"></i>
+                                <span class="metodo-texto">
+                                    <span class="metodo-nombre">Transferencia bancaria <span class="badge metodo-pronto">Próximamente</span></span>
+                                    <span class="metodo-detalle">Desde Banco Pichincha, Guayaquil, Produbanco o Pacífico.</span>
+                                </span>
+                            </label>
+
+                            <label class="metodo metodo-inactivo">
+                                <input class="form-check-input" type="radio" name="metodo" value="DEUNA" disabled>
+                                <i class="bi bi-qr-code-scan metodo-icono" aria-hidden="true"></i>
+                                <span class="metodo-texto">
+                                    <span class="metodo-nombre">DeUna <span class="badge metodo-pronto">Próximamente</span></span>
+                                    <span class="metodo-detalle">Escanea un código QR desde la app de tu banco.</span>
+                                </span>
+                            </label>
+
+                            <label class="metodo metodo-inactivo">
+                                <input class="form-check-input" type="radio" name="metodo" value="PAYPHONE" disabled>
+                                <i class="bi bi-phone metodo-icono" aria-hidden="true"></i>
+                                <span class="metodo-texto">
+                                    <span class="metodo-nombre">PayPhone <span class="badge metodo-pronto">Próximamente</span></span>
+                                    <span class="metodo-detalle">Confirma el pago con tu número de celular.</span>
+                                </span>
+                            </label>
+
+                            <label class="metodo metodo-inactivo">
+                                <input class="form-check-input" type="radio" name="metodo" value="EFECTIVO" disabled>
+                                <i class="bi bi-cash-coin metodo-icono" aria-hidden="true"></i>
+                                <span class="metodo-texto">
+                                    <span class="metodo-nombre">Efectivo <span class="badge metodo-pronto">Próximamente</span></span>
+                                    <span class="metodo-detalle">En ventanillas de Servipagos o Western Union con un código de pago.</span>
+                                </span>
+                            </label>
+                        </fieldset>
+
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="checkbox" id="acepto" name="acepto" value="true" required>
                             <label class="form-check-label" for="acepto">

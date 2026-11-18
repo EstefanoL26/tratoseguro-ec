@@ -911,3 +911,76 @@ textarea {
     color: var(--ts-azul-oscuro);
     font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Métodos de pago (pantalla de pago) ---------- */
+/* Solo la tarjeta funciona; los otros métodos se muestran deshabilitados como "Próximamente" */
+
+.metodos {
+    display: grid;
+    gap: .5rem;
+}
+
+.metodos legend {
+    margin-bottom: .5rem;
+}
+
+.metodo {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    border: 1px solid var(--ts-linea);
+    border-radius: .75rem;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.metodo .form-check-input {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+/* El método elegido se marca con el borde azul de la marca */
+.metodo:has(.form-check-input:checked) {
+    border-color: var(--ts-azul);
+    background-color: #f2f7fc;
+}
+
+.metodo-icono {
+    font-size: 1.25rem;
+    color: var(--ts-azul);
+}
+
+.metodo-texto {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.metodo-nombre {
+    font-weight: 600;
+}
+
+.metodo-detalle {
+    font-size: .875rem;
+    color: var(--ts-texto-secundario);
+}
+
+.metodo-inactivo {
+    cursor: not-allowed;
+    background-color: var(--ts-fondo);
+}
+
+.metodo-inactivo .metodo-icono,
+.metodo-inactivo .metodo-nombre {
+    color: var(--ts-texto-secundario);
+}
+
+.metodo-pronto {
+    margin-left: .25rem;
+    vertical-align: .125rem;
+    background-color: var(--ts-linea);
+    color: var(--ts-texto-secundario);
+    font-weight: 600;
+}
