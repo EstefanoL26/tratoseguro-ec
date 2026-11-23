@@ -5,6 +5,7 @@ import com.tratoseguro.model.Rol;
 import com.tratoseguro.model.Usuario;
 import com.tratoseguro.repository.CiudadRepository;
 import com.tratoseguro.repository.NotificacionRepository;
+import com.tratoseguro.repository.PushSuscripcionRepository;
 import com.tratoseguro.repository.UsuarioRepository;
 import com.tratoseguro.util.ValidadorCedula;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -30,13 +31,16 @@ public class UsuarioService implements UserDetailsService {
     private final CiudadRepository ciudadRepository;
     private final NotificacionRepository notificacionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PushSuscripcionRepository pushSuscripcionRepository;
 
     public UsuarioService(UsuarioRepository usuarioRepository, CiudadRepository ciudadRepository,
-                          NotificacionRepository notificacionRepository, PasswordEncoder passwordEncoder) {
+                          NotificacionRepository notificacionRepository, PasswordEncoder passwordEncoder,
+                          PushSuscripcionRepository pushSuscripcionRepository) {
         this.usuarioRepository = usuarioRepository;
         this.ciudadRepository = ciudadRepository;
         this.notificacionRepository = notificacionRepository;
         this.passwordEncoder = passwordEncoder;
+        this.pushSuscripcionRepository = pushSuscripcionRepository;
     }
 
     @Override
@@ -169,6 +173,7 @@ public class UsuarioService implements UserDetailsService {
         }
         // Sus avisos se borran; pero si participa en tratos, su historial es parte del expediente y no se borra
         notificacionRepository.deleteAll(notificacionRepository.findByUsuarioId(id));
+        pushSuscripcionRepository.deleteAll(pushSuscripcionRepository.findByUsuarioId(id));
         try {
             usuarioRepository.delete(usuario);
             usuarioRepository.flush();

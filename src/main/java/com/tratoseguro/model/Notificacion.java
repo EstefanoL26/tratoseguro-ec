@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
- * MODELO: aviso interno para un usuario (no se envían correos ni SMS reales).
+ * MODELO: aviso para un usuario. Se muestra en la campana y, si está configurado, también sale por correo y push.
  */
 @Entity
 @Table(name = "notificacion")

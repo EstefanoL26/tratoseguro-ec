@@ -39,6 +39,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/registro", "/css/**", "/img/**", "/js/**", "/error").permitAll()
+                        // El service worker y el manifiesto deben cargarse sin sesión (los pide el navegador)
+                        .requestMatchers("/sw.js", "/manifest.webmanifest").permitAll()
                         // Documentación de la API (la API en sí exige usuario y contraseña)
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Stripe avisa los pagos aquí; se acepta solo con una firma válida (ver StripeWebhookController)

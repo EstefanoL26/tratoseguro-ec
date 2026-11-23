@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<!-- Correo de aviso. Los programas de correo no cargan CSS externo: los estilos van en línea y con tablas. -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${producto != null} ? 'Novedad en tu trato: ' + ${producto} : 'Novedad en TratoSeguro EC'">Novedad</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f7fa;font-family:Manrope,'Segoe UI',Roboto,Arial,sans-serif;color:#16233a;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f7fa;padding:32px 16px;">
+    <tr>
+        <td align="center">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+                <tr>
+                    <td style="padding:0 4px 20px;">
+                        <img th:src="${urlApp} + '/img/logo.png'" alt="TratoSeguro EC" width="160" height="42" style="display:block;border:0;">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="background-color:#ffffff;border:1px solid #e3e8ee;border-radius:14px;padding:28px;">
+                        <p style="margin:0 0 6px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#0b6b68;"
+                           th:text="${producto != null} ? ${producto} : 'Aviso'">Bicicleta aro 29</p>
+                        <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#0a2f5a;" th:text="'Hola, ' + ${nombre}">Hola, Ana</h1>
+                        <p style="margin:0 0 24px;font-size:16px;line-height:1.55;" th:text="${mensaje}">"Bicicleta aro 29" pasó a Pagada.</p>
+                        <a th:href="${enlace}" href="#"
+                           style="display:inline-block;background-color:#135892;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:10px;">
+                            Ver en TratoSeguro
+                        </a>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:18px 4px 0;font-size:12px;line-height:1.5;color:#5b6675;">
+                        Recibes este correo porque participas en un trato protegido con TratoSeguro EC.
+                        Los pagos de esta plataforma son de prueba: no se mueve dinero real.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
