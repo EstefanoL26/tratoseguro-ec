@@ -24,6 +24,7 @@ erDiagram
     USUARIO ||--o{ HISTORIAL : "hace el cambio"
     USUARIO ||--o{ NOTIFICACION : "recibe"
     TRANSACCION ||--o{ NOTIFICACION : "genera"
+    USUARIO ||--o{ PUSH_SUSCRIPCION : "recibe push en"
     EVIDENCIA ||--o| ARCHIVO_EVIDENCIA : "adjunta"
     TRANSACCION ||--o| CALIFICACION : "se califica"
     USUARIO ||--o{ CALIFICACION : "recibe (vendedor)"
@@ -137,6 +138,7 @@ erDiagram
 | `fk_evidencia_usuario` | `evidencia.id_usuario` | `usuario.id` | Quién aportó la evidencia |
 | `fk_notificacion_usuario` | `notificacion.id_usuario` | `usuario.id` | Destinatario |
 | `fk_notificacion_transaccion` | `notificacion.id_transaccion` | `transaccion.id` | Trato que la generó |
+| `fk_push_usuario` | `push_suscripcion.id_usuario` | `usuario.id` | Celular o navegador que recibe los avisos push del usuario (V3; `uk_push_endpoint` impide registrar dos veces el mismo dispositivo) |
 | `fk_archivo_evidencia` | `archivo_evidencia.id_evidencia` (único) | `evidencia.id` | Foto o PDF de la evidencia |
 | `fk_calificacion_transaccion` | `calificacion.id_transaccion` (único) | `transaccion.id` | Una calificación por trato |
 | `fk_calificacion_comprador` | `calificacion.id_comprador` | `usuario.id` | Quién califica |

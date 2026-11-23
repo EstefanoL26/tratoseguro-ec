@@ -15,6 +15,18 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
+      # Notificaciones por correo (API de Brevo; Render gratis bloquea SMTP) y push al celular (VAPID).
+      # Opcionales: sin ellas solo funcionan los avisos dentro de la app. Se escriben en el panel de Render.
+      - key: APP_URL
+        value: https://tratoseguro-ec.onrender.com
+      - key: BREVO_API_KEY
+        sync: false
+      - key: CORREO_REMITENTE
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
       # Activa application-prod.properties (PostgreSQL en lugar de H2)
       - key: SPRING_PROFILES_ACTIVE
         value: prod

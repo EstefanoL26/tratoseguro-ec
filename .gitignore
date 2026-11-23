@@ -39,3 +39,6 @@ data/
 
 ### Configuración local de herramientas de diseño ###
 .impeccable/
+
+# Claves locales (VAPID y otras) que nunca se suben
+*.local.txt

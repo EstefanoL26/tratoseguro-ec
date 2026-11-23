@@ -201,6 +201,35 @@ curl -u anatorres:clave123 http://localhost:8080/api/v1/transacciones
 La API usa los mismos servicios que la web (las reglas no se duplican) y nunca expone entidades: devuelve DTOs
 sin contraseñas ni cédulas. Los errores salen en JSON (403, 409, 422).
 
+## Notificaciones: app, correo y push al celular
+
+Cada cambio de un trato (pago, envío, disputa, decisión, liberación o reembolso) avisa a las partes por tres canales:
+
+| Canal | Cómo funciona | Qué necesita |
+|---|---|---|
+| Campana en la app | Siempre activa: contador y página `/notificaciones` | Nada |
+| Correo | API HTTPS de **Brevo** (Render gratis bloquea SMTP en los puertos 25, 465 y 587) | `BREVO_API_KEY` y `CORREO_REMITENTE` |
+| Push al celular o la computadora | Estándar **Web Push** con claves VAPID; el service worker `/sw.js` muestra el aviso aunque la app esté cerrada | `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` |
+
+- El correo y el push salen **en segundo plano y después de que la base confirma el cambio** (`AvisosExternos`):
+  el usuario no espera al servicio externo y, si el trato no se guarda, no sale ningún aviso.
+- Si un servicio falla, el trato no se ve afectado y el aviso sigue en la campana.
+- Cada usuario activa el push en **Notificaciones → Avisos fuera de la app**. En iPhone (iOS 16.4 o superior) primero
+  hay que agregar la app a la pantalla de inicio (Safari → Compartir → Agregar a pantalla de inicio); en Android y en
+  computadora funciona directo en Chrome, Edge o Firefox.
+- Al cerrar sesión se quita el dispositivo, para que otra persona que entre en ese navegador no reciba avisos ajenos.
+
+### Configurarlo en Render
+1. **Correo:** crea una cuenta gratis en https://www.brevo.com (300 correos al día), verifica tu correo como remitente en
+   *Senders, Domains & Dedicated IPs* y crea una clave en *SMTP & API → API Keys*. En Render agrega `BREVO_API_KEY` y
+   `CORREO_REMITENTE` (el correo verificado).
+2. **Push:** genera un par de claves VAPID (por ejemplo `npx web-push generate-vapid-keys`) y agrega
+   `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY` en Render. La privada es secreta: nunca va en el código.
+3. Guarda los cambios, espera el despliegue y usa **Enviarme un aviso de prueba** en `/notificaciones`.
+
+Los usuarios de ejemplo tienen correos ficticios (`@correo.ec`); para probar el correo, el administrador puede poner tu
+correo real a uno de ellos en `/admin/usuarios`.
+
 ## Administración (avance anterior)
 
 - **Usuarios** (`/admin/usuarios`): CRUD con roles; la **cédula** se valida en el servidor con el algoritmo
