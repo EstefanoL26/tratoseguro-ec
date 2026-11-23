@@ -16,12 +16,54 @@
                 <li aria-current="page">Notificaciones</li>
             </ol>
             <h1 class="titulo">Notificaciones</h1>
-            <p class="subtitulo">Avisos internos de tus tratos (no se envían correos ni SMS).</p>
+            <p class="subtitulo">Todo lo que pasa en tus tratos: en la app, en tu correo y en tu celular.</p>
         </div>
         <form th:if="${notificacionesNoLeidas > 0}" th:action="@{/notificaciones/leidas}" method="post">
             <button type="submit" class="btn btn-outline-primary"><i class="bi bi-check2-all" aria-hidden="true"></i>Marcar todas como leídas</button>
         </form>
     </header>
+
+    <!-- ---------- Avisos fuera de la app: correo y push al celular ---------- -->
+    <section class="panel" aria-labelledby="titulo-canales">
+        <div class="panel-cabecera">
+            <div>
+                <h2 id="titulo-canales" class="panel-titulo">Avisos fuera de la app</h2>
+                <p class="panel-nota mt-1">Cada novedad de tus tratos también te llega aquí, aunque no tengas TratoSeguro abierto.</p>
+            </div>
+            <form th:action="@{/notificaciones/prueba}" method="post">
+                <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-send" aria-hidden="true"></i>Enviarme un aviso de prueba</button>
+            </form>
+        </div>
+        <ul class="canales">
+            <li class="canal">
+                <span class="opcion-icono"><i class="bi bi-envelope" aria-hidden="true"></i></span>
+                <div class="canal-texto">
+                    <span class="opcion-nombre">Correo electrónico</span>
+                    <span class="opcion-detalle" th:if="${correoActivo}" th:text="'Te escribimos a ' + ${emailUsuario}">Te escribimos a ana@correo.ec</span>
+                    <span class="opcion-detalle" th:unless="${correoActivo}">El envío de correos todavía no está configurado en este servidor.</span>
+                </div>
+                <span class="etiqueta" th:classappend="${correoActivo} ? 'etiqueta-verde'" th:text="${correoActivo} ? 'Activado' : 'No configurado'">Activado</span>
+            </li>
+            <li class="canal" id="panelPush" th:attr="data-vapid=${pushActivo} ? ${vapidPublica} : ''">
+                <span class="opcion-icono"><i class="bi bi-phone-vibrate" aria-hidden="true"></i></span>
+                <div class="canal-texto">
+                    <span class="opcion-nombre">Notificaciones push en este dispositivo</span>
+                    <span class="opcion-detalle" id="estadoPush" aria-live="polite">Revisando si este navegador permite notificaciones…</span>
+                    <span class="opcion-detalle" th:if="${dispositivos > 0}"
+                          th:text="${dispositivos} + (${dispositivos == 1} ? ' dispositivo tuyo recibe avisos.' : ' dispositivos tuyos reciben avisos.')">1 dispositivo tuyo recibe avisos.</span>
+                    <div id="ayudaIOS" class="aviso mt-2" hidden>
+                        <i class="bi bi-phone" aria-hidden="true"></i>
+                        <div>En Safari toca <strong>Compartir</strong> <i class="bi bi-box-arrow-up" aria-hidden="true"></i> →
+                            <strong>Agregar a pantalla de inicio</strong>. Abre TratoSeguro desde el ícono nuevo y vuelve a esta página para activar los avisos (iOS 16.4 o superior).</div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm mt-2 align-self-start" id="botonPush" hidden>
+                        <i class="bi bi-bell" aria-hidden="true"></i><span>Activar notificaciones push</span>
+                    </button>
+                </div>
+                <span class="etiqueta" id="etiquetaPush">Desactivadas</span>
+            </li>
+        </ul>
+    </section>
 
     <section class="panel" aria-labelledby="titulo-avisos">
         <div class="panel-cabecera">

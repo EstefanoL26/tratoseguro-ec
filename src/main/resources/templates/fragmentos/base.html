@@ -8,6 +8,14 @@
     <meta name="theme-color" content="#edf2f7">
     <title th:text="${titulo} + ' | TratoSeguro EC'">TratoSeguro EC</title>
     <link rel="icon" type="image/png" th:href="@{/img/icono.png}">
+    <!-- App instalable en el celular (necesario para las notificaciones push en iPhone) -->
+    <link rel="manifest" th:href="@{/manifest.webmanifest}">
+    <link rel="apple-touch-icon" th:href="@{/img/apple-touch-icon.png}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="TratoSeguro">
+    <!-- Token CSRF para las peticiones que hace JavaScript (activar notificaciones push) -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,6 +24,7 @@
     <link th:href="@{/css/estilos.css}" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script th:src="@{/js/interacciones.js}" defer></script>
+    <script th:src="@{/js/push.js}" defer></script>
     <!-- Sin JavaScript el toast se muestra fijo, sin animación -->
     <noscript><style>.t-toast { opacity: 1; transform: none; filter: none; }</style></noscript>
 </head>
